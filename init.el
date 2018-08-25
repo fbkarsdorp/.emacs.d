@@ -1,0 +1,521 @@
+;;; -*- lexical-binding: t -*-
+;;; init.el --- This is where all emacs start.
+
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/"))
+;; (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
+(package-initialize)
+
+(setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
+                            (font . "Fira Code-12")
+                            (height . 45) (width . 150)))
+
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+
+(eval-when-compile
+  (require 'use-package))
+(setq use-package-always-ensure t)
+(require 'diminish)
+(require 'bind-key)
+
+(setq inhibit-startup-message t)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+(tooltip-mode -1)
+(show-paren-mode t)
+(blink-cursor-mode -1)
+(save-place-mode 1)
+(global-hl-line-mode 1)
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
+(add-hook 'text-mode-hook 'display-line-numbers-mode)
+;; Changes all yes/no questions to y/n type
+(fset 'yes-or-no-p 'y-or-n-p)
+;; warn only for files larger than 100mb
+(setq large-file-warning-threshold 100000000)
+
+(setq-default indent-tabs-mode nil)
+(setq default-tab-width 4)
+(setq tab-width 4)
+(setq-default fill-column 90)
+(prefer-coding-system 'utf-8)
+
+(use-package async
+  :config (setq async-bytecomp-package-mode 1))
+
+(defun comment-current-line-dwim ()
+  "Comment or uncomment the current line."
+  (interactive)
+  (save-excursion
+    (if (use-region-p)
+        (comment-or-uncomment-region (region-beginning) (region-end))
+      (push-mark (beginning-of-line) t t)
+      (end-of-line)
+      (comment-dwim nil))))
+
+(global-set-key (kbd "M-/") 'comment-current-line-dwim)
+
+(setq frame-title-format "")
+(setq mac-option-key-is-meta nil
+      mac-command-key-is-meta t
+      mac-command-modifier 'meta
+      mac-option-modifier 'none)
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+
+(global-auto-revert-mode t)
+(add-hook 'text-mode-hook #'visual-line-mode)
+(add-hook 'text-mode-hook #'auto-fill-mode)
+
+(setq ring-bell-function 'ignore)
+(setq ns-use-native-fullscreen t)
+(setq tramp-default-method "ssh")
+
+;;*** Backups
+(setq backup-by-copying t)
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+(setq delete-old-versions t)
+(setq version-control t)
+(setq create-lockfiles nil)
+
+; scrolling
+;; (setq scroll-preserve-screen-position t
+;;       scroll-margin 0
+;;       scroll-conservatively 101)
+
+(setq scroll-margin 3
+      scroll-conservatively 101
+      scroll-up-aggressively 0.01
+      scroll-down-aggressively 0.01
+      scroll-preserve-screen-position t
+      auto-window-vscroll nil
+      hscroll-margin 5
+      hscroll-step 5)
+
+(defun new-scratch-pad ()
+  (interactive)
+  (let ((buffer (generate-new-buffer "scratch-pad")))
+    (switch-to-buffer buffer)
+    (setq buffer-offer-save t)
+    buffer))
+
+(global-set-key (kbd "C-c s") 'new-scratch-pad)
+
+(use-package tex
+  :defer t
+  :ensure auctex
+  :init
+  (progn
+    (setq TeX-auto-save t
+          TeX-parse-self t
+          TeX-PDF-mode 1
+          ;; Don't insert line-break at inline math
+          LaTeX-fill-break-at-separators nil)))
+
+(use-package auctex-latexmk
+  :init
+  (progn
+    (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+  :config (auctex-latexmk-setup)))
+
+(use-package flyspell-correct-ivy
+  :config
+  (setq-default ispell-program-name "hunspell")
+  (setq ispell-really-hunspell t)
+  (setq flyspell-default-dictionary "nl_NL")
+  (setenv "DICTIONARY" "nl_NL")
+  (define-key flyspell-mode-map (kbd "C-c s") 'flyspell-correct-previous-word-generic))
+
+(use-package smartparens
+  :diminish smartparens-mode
+  :config
+  (require 'smartparens-config)
+  (require 'smartparens-markdown)
+  (smartparens-global-mode))
+
+(use-package undo-tree
+  :config (global-undo-tree-mode 1)
+  :bind (("C-c u" . undo-tree-visualize)))
+
+;; (use-package solarized-theme
+;;   :config
+;;   (setq x-underline-at-descent-line t)
+;;   (setq solarized-use-less-bold t)
+;;   (setq solarized-use-variable-pitch nil)
+;;   (setq solarized-high-contrast-mode-line t)
+;;   (load-theme 'solarized-light t))
+
+;; (use-package gruvbox-theme
+;;   :config (load-theme 'gruvbox-light-medium t))
+
+(use-package doom-themes
+  :config
+  (load-theme 'doom-one t)
+  (doom-themes-org-config)
+  (doom-themes-neotree-config)
+  :init (setq doom-tomorrow-night-padded-modeline 5))
+
+(use-package doom-modeline
+  :defer t
+  ;; :config (setq doom-modeline-height 20)
+  :hook (after-init . doom-modeline-init))
+
+(use-package rainbow-delimiters
+  :config (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+
+(use-package company
+  :config
+  (global-company-mode)
+  (setq company-global-modes '(not text-mode term-mode org-mode))
+  (setq company-selection-wrap-around t
+        company-show-numbers t
+        company-tooltip-align-annotations t
+        company-idle-delay 0.2
+        company-require-match nil
+        company-minimum-prefix-length 2)
+  ;; ;; Employ completion selection statistics for completion suggestions
+  (use-package company-statistics
+    :config (company-statistics-mode))
+  ;; Bind next and previous selection to more intuitive keys
+  (define-key company-active-map (kbd "C-n") 'company-select-next)
+  (define-key company-active-map (kbd "C-p") 'company-select-previous)
+  (add-to-list 'company-frontends 'company-tng-frontend)
+  :bind (("TAB" . 'company-indent-or-complete-common)))
+
+(use-package elpy
+  :config
+  (eldoc-add-command-completions "company-")
+  (eldoc-add-command-completions "python-indent-dedent-line-backspace")
+  (setq elpy-modules '(elpy-module-company elpy-module-eldoc))
+  (elpy-enable)
+  :bind (("M-]" . 'elpy-nav-indent-shift-right)
+         ("M-[" . 'elpy-nav-indent-shift-left)))
+
+;; (use-package eglot
+;;   :config
+;;   (add-hook 'python-mode-hook 'eglot-ensure)
+;;   (setq eglot-ignored-server-capabilites '(:documentHighlightProvider)))
+
+;; (use-package anaconda-mode
+;;   :init
+;;   (progn
+;;     (add-hook 'python-mode-hook 'anaconda-mode)
+;;     (add-hook 'python-mode-hook 'anaconda-eldoc-mode)
+;;     (setq anaconda-mode-localhost-address "localhost")))
+
+;; (use-package company-anaconda
+;;   :init
+;;   (eval-after-load "company"
+;;     '(add-to-list 'company-backends '(company-anaconda :with company-capf))))
+
+(use-package ess)
+
+(use-package yaml-mode
+  :config
+  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode)))
+
+(use-package visual-fill-column)
+
+(use-package markdown-mode
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init (setq markdown-command "multimarkdown")
+  :config
+  (setq visual-line-mode t)
+  (setq visual-line-column 100)
+  (add-hook 'visual-line-mode-hook #'visual-fill-column-mode)
+  (setq markdown-fontify-code-blocks-natively t))
+
+(use-package recentf
+  :config
+  (setq recentf-exclude '("COMMIT_MSG" "COMMIT_EDITMSG" "github.*txt$"
+                          "[0-9a-f]\\{32\\}-[0-9a-f]\\{32\\}\\.org"
+                          ".*png$" ".*cache$"))
+  (setq recentf-max-saved-items 1000))
+
+(use-package ivy
+  :init (ivy-mode 1)
+  :config
+  (setq ivy-use-virtual-buffers t)
+  (setq enable-recursive-minibuffers t)
+  (setq ivy-display-style 'fancy)
+  (setq ivy-re-builders-alist
+        '((ivy-bibtex . ivy--regex-ignore-order)
+          (t . ivy--regex-plus)))
+  :bind (("C-s" . 'counsel-grep-or-swiper)
+         ("C-r" . 'swiper)
+         ("C-c C-r" . 'ivy-resume)))
+
+(use-package smex)
+
+(use-package counsel
+  :init (counsel-mode t)
+  :bind (("C-x C-r" . counsel-recentf)
+         ("C-c r" . 'counsel-rg)
+         ("C-c k" . 'counsel-ag)
+         ("C-c f" . 'counsel-fzf)
+         ("C-c g" . 'counsel-git)
+         ("C-c i" . 'counsel-imenu))
+  :config
+  (setq counsel-git-cmd "rg --files")
+  (setq counsel-grep-base-command "grep -niE %s %s")
+  (setq counsel-grep-base-command
+        ;; "ag --nocolor --nogroup %s %s")
+        "rg -S -M 120 --no-heading --line-number --color never %s %s")
+  (setq counsel-rg-base-command
+      "rg -S -M 120 --no-heading --line-number --color never %s .")
+  (setq counsel-find-file-occur-cmd
+        "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first"))
+
+(defun search-dir-with-ag ()
+  (interactive)
+  (let ((search-dir (read-directory-name "Directory:")))
+    (counsel-ag "" search-dir)))
+
+(add-to-list 'load-path "~/.emacs.d/wgrep")
+(require 'wgrep)
+
+(use-package deadgrep
+  :bind*
+  ("C-c r" . deadgrep))
+
+(defun ivy-bibtex-format-pandoc-citation (keys)
+  (concat "[" (mapconcat (lambda (key) (concat "@" key)) keys "; ") "]"))
+
+(use-package ivy-bibtex
+  :bind*
+  ("C-c C-r" . ivy-bibtex)
+  :config
+  (setq bibtex-completion-bibliography "~/org/bibliography.bib")
+  (setq ivy-bibtex-default-action #'ivy-bibtex-insert-citation)
+  (setq bibtex-completion-display-formats '((t . "${author:36} ${title:*} ${year:4} ${=type=:7}")))
+  (setf (alist-get 'org-mode bibtex-completion-format-citation-functions)
+        'bibtex-completion-format-citation-pandoc-citeproc))
+
+(use-package projectile
+  :diminish
+  :config
+  (projectile-global-mode)
+  (define-key projectile-mode-map (kbd "M-p") 'projectile-command-map)
+  (setq projectile-completion-system 'ivy))
+
+(use-package counsel-projectile
+  :config
+  (counsel-projectile-mode))
+
+(use-package json-mode)
+
+(use-package avy
+  :bind (("C-'" . 'avy-goto-char)
+         ("C-\\" . 'avy-goto-line)
+         ("C-;" . 'avy-goto-word-1)))
+
+(use-package which-key
+  :diminish
+  :init
+  (progn
+    (setq which-key-idle-delay 0.4)
+    (which-key-mode)))
+
+(use-package multiple-cursors
+  :bind (("C-S-c C-S-c" . mc/edit-lines)
+         ("C->"         . mc/mark-next-like-this)
+         ("C-<"         . mc/mark-previous-like-this)
+         ("C-c C-<"     . mc/mark-all-like-this)
+         ("M-<down-mouse-1>" . mc/add-cursor-on-click)))
+
+(use-package magit
+  :bind (("C-x g" . magit-status)))
+
+;; (use-package diff-hl
+;;   :config
+;;   (progn
+;;     ;; Highlight changes to the current file in the fringe
+;;     (global-diff-hl-mode)
+;;     ;; Highlight changed files in the fringe of Dired
+;;     (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
+;;     ;; Fall back to the display margin, if the fringe is unavailable
+;;     (unless (display-graphic-p)
+;;       (diff-hl-margin-mode))
+;;     (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)))
+
+(use-package git-gutter-fringe
+  :config
+  (setq-default fringes-outside-margins t)
+  ;; thin fringe bitmaps
+  (fringe-helper-define 'git-gutter-fr:added '(center repeated)
+    "XXX.....")
+  (fringe-helper-define 'git-gutter-fr:modified '(center repeated)
+    "XXX.....")
+  (fringe-helper-define 'git-gutter-fr:deleted 'bottom
+    "X......."
+    "XX......"
+    "XXX....."
+    "XXXX....")
+  (add-hook 'text-mode-hook #'git-gutter-mode)
+  (add-hook 'prog-mode-hook #'git-gutter-mode)
+  (add-hook 'conf-mode #'git-gutter-mode))
+
+(use-package all-the-icons)
+
+(use-package neotree
+  :bind (("<f8>" . 'neotree-toggle))
+  :config
+  (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
+  (setq neo-window-fixed-size t
+        neo-window-width 40
+        neo-show-updir-line nil
+        neo-auto-indent-point t
+        neo-vc-integration nil
+        neo-mode-line-format nil
+        projectile-switch-project-action 'neotree-projectile-action))
+
+;; org configuration
+(use-package org-bullets
+  :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+
+(setq org-directory "~/org")
+(setq org-default-notes-file (concat org-directory "/notes.org"))
+(define-key global-map "\C-cc" 'org-capture)
+(define-key global-map "\C-ca" 'org-agenda)
+
+;; remove ^ for refile searches
+(mapc (lambda (item)
+        (setf (alist-get item ivy-initial-inputs-alist) ""))
+      '(org-refile org-agenda-refile org-capture-refile))
+
+(setq org-todo-keywords '((sequence "TODO" "IN-PROGRESS" "WAITING" "|" "DONE" "CANCELLED")))
+(setq org-refile-use-outline-path 'file)
+(setq org-outline-path-complete-in-steps nil)
+(setq org-refile-allow-creating-parent-nodes 'confirm)
+(setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
+;;      '(("~/org/projects.org" :maxlevel . 1) ("~/org/oc.org" :maxlevel . 1) ("~/org/ooit.org" :level . 1)))
+(setq org-agenda-show-future-repeats nil)
+;; (setq org-agenda-window-setup 'current-window)
+
+(setq org-capture-templates
+      '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
+         "* TODO %^{Todo} %^G \n  %i\n  %a\n\n  %?"
+         :empty-lines 1)
+        ("i" "Idee" entry (file+olp+datetree "~/org/ideas.org")
+         "* Idee: %^{Title} %^g \n\n%?"
+         :empty-lines 1)
+        ("n" "Note" entry (file+headline "~/org/todo.org" "Notes")
+         "* Note %^{Title} %^G \n\n  %?")
+        ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
+         "* Link [[%^{Link}][%^{Description}]] %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n"
+         :empty-lines 1)))
+
+(defun skip-sprint ()
+  (seq-filter (lambda (x) (not (string-equal x "~/org/sprint.org"))) (org-agenda-files)))
+
+(setq org-agenda-custom-commands
+      '(("d" "Dagelijkse Takenlijst"
+         ((agenda "" ((org-agenda-span 1)
+                      (org-agenda-sorting-strategy
+                       (quote ((agenda time-up priority-down))))
+                      (org-deadline-warning-days 0)))
+          (agenda "" ((org-agenda-overriding-header "\nUpcoming deadlines")
+                      (org-agenda-span 7)
+                      (org-agenda-time-grid nil)
+                      (org-deadline-warning-days 0)
+                      (org-agenda-show-all-dates nil)
+                      (org-agenda-entry-types '(:deadline))))
+          (todo "" ((org-agenda-overriding-header "\nBacklog")
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
+                    (org-agenda-sorting-strategy
+                     (quote ((agenda time-up priority-down))))
+                    (org-agenda-files (skip-sprint))))))
+
+        ("p" "Sprint"
+         ((todo "" ((org-agenda-overriding-header "Sprint")
+                    (org-agenda-files '("~/org/sprint.org"))
+                    (org-agenda-sorting-strategy
+                     (quote ((agenda time-up priority-down))))))))
+
+        ("b" "Backlog"
+         ((todo "" ((org-agenda-overriding-header "Backlog")
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
+                    (org-agenda-sorting-strategy
+                     (quote ((agenda time-up priority-down))))
+                    (org-agenda-files (skip-sprint))))))
+
+        ("w" "Wekelijkse review"
+         ((agenda "" ((org-agenda-span 7)
+                      (org-deadline-warning-days 0)
+                      (org-agenda-show-all-dates nil)))
+          (agenda "" ((org-agenda-overriding-header "\nUpcoming deadlines")
+                      (org-agenda-span 'month)
+                      (org-agenda-time-grid nil)
+                      (org-deadline-warning-days 0)
+                      (org-agenda-show-all-dates nil)
+                      (org-agenda-entry-types '(:deadline))))          
+          (todo "" ((org-agenda-overriding-header "\nBacklog")
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
+                    (org-agenda-sorting-strategy
+                     (quote ((agenda time-up priority-down))))
+                    (org-agenda-files (skip-sprint))))
+          (stuck "" ((org-agenda-entry-types '(:todo))))
+          (todo "" ((org-agenda-overriding-header "\nSomeday TODOs")
+                    (org-agenda-files '("~/org/ooit.org"))))))))
+
+(setq org-agenda-files
+      (mapcar (lambda (f) (concat org-directory f)) '("/todo.org" "/projects.org" "/oc.org" "/sprint.org")))
+
+(defun counsel-find-org-file ()
+  (interactive)
+  (let ((file-list (seq-filter (lambda (f) (s-suffix? ".org" f))
+                               (directory-files "~/org"))))
+    (ivy-read "org files: " file-list
+              :require-match nil
+              :action (lambda (f) (find-file (concat org-directory "/" f)))
+              :caller 'counsel-find-org-file)))
+
+(define-key global-map "\C-co" 'counsel-find-org-file)
+
+(use-package ox-pandoc)
+
+(use-package visual-regexp
+  :bind (("M-%" . vr/query-replace)))
+
+(use-package visual-regexp-steroids
+  :after visual-regexp)
+
+(use-package server
+  :config
+  (unless (server-running-p)
+    (server-start)))
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   (quote
+    ("190a9882bef28d7e944aa610aa68fe1ee34ecea6127239178c7ac848754992df" default)))
+ '(neo-window-fixed-size t)
+ '(org-agenda-files
+   (quote
+    ("~/Projects/book/introduction/cookbooks.org" "~/org/leadership.org" "~/org/todo.org" "~/org/projects.org" "~/org/oc.org" "~/org/sprint.org")))
+ '(package-selected-packages
+   (quote
+    (visual-fill-column visual-regexp-steroids visual-regexp doom-modeline neotree deadgrep seoul256-theme elpy undo-tree json-mode calfw calfw-org ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile projectile gruvbox-theme zenburn-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
+ '(paradox-github-token t)
+ '(require-final-newline t)
+ '(safe-local-variable-values (quote ((org-image-actual-width)))))
+;; (custom-set-faces
+;;  ;; custom-set-faces was added by Custom.
+;;  ;; If you edit it by hand, you could mess it up, so be careful.
+;;  ;; Your init file should contain only one such instance.
+;;  ;; If there is more than one, they won't work right.
+;;  '(org-checkbox ((t (:background "#fdf6e3" :foreground "#657b83" :box nil)))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(markdown-code-face ((t (:inherit ##)))))
+(put 'downcase-region 'disabled nil)
