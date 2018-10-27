@@ -8,11 +8,13 @@
 (package-initialize)
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "Fira Code-12")
+                            (font . "-*-Fira Code-light-normal-normal-*-12-*-*-*-m-0-iso10646-1")
                             (height . 45) (width . 150)))
 
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
+
+(customize-set-variable 'tramp-default-user "folgert")
 
 (eval-when-compile
   (require 'use-package))
@@ -28,8 +30,8 @@
 (blink-cursor-mode -1)
 (save-place-mode 1)
 (global-hl-line-mode 1)
-(add-hook 'prog-mode-hook 'display-line-numbers-mode)
-(add-hook 'text-mode-hook 'display-line-numbers-mode)
+(fringe-mode 16)
+
 ;; Changes all yes/no questions to y/n type
 (fset 'yes-or-no-p 'y-or-n-p)
 ;; warn only for files larger than 100mb
@@ -40,6 +42,9 @@
 (setq tab-width 4)
 (setq-default fill-column 90)
 (prefer-coding-system 'utf-8)
+(add-hook 'dired-mode-hook
+          (lambda ()
+            (dired-hide-details-mode 1)))
 
 (use-package async
   :config (setq async-bytecomp-package-mode 1))
@@ -55,6 +60,33 @@
       (comment-dwim nil))))
 
 (global-set-key (kbd "M-/") 'comment-current-line-dwim)
+(global-set-key (kbd "M-{") 'previous-buffer)
+(global-set-key (kbd "M-}") 'next-buffer)
+(global-set-key (kbd "M-+")  'mode-line-other-buffer)
+
+(defun code-buffer (direction)
+  (interactive)
+  (let ((bread-crumb (buffer-name)))
+    (fset 'movement (if (string-equal direction "forward")
+                        'next-buffer
+                      'previous-buffer))
+    (movement)
+    (while
+        (and
+         (string-match-p "^\*" (buffer-name))
+         (not (equal bread-crumb (buffer-name))))
+      (movement))))
+
+(defun next-code-buffer ()
+  (interactive)
+  (code-buffer "forward"))
+
+(defun previous-code-buffer ()
+  (interactive)
+  (code-buffer "backward"))
+
+(global-set-key [remap next-buffer] 'next-code-buffer)
+(global-set-key [remap previous-buffer] 'previous-code-buffer)
 
 (setq frame-title-format "")
 (setq mac-option-key-is-meta nil
@@ -64,7 +96,6 @@
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 
 (global-auto-revert-mode t)
-(add-hook 'text-mode-hook #'visual-line-mode)
 (add-hook 'text-mode-hook #'auto-fill-mode)
 
 (setq ring-bell-function 'ignore)
@@ -78,28 +109,23 @@
 (setq version-control t)
 (setq create-lockfiles nil)
 
-; scrolling
-;; (setq scroll-preserve-screen-position t
-;;       scroll-margin 0
-;;       scroll-conservatively 101)
-
-(setq scroll-margin 3
-      scroll-conservatively 101
-      scroll-up-aggressively 0.01
-      scroll-down-aggressively 0.01
-      scroll-preserve-screen-position t
-      auto-window-vscroll nil
-      hscroll-margin 5
-      hscroll-step 5)
+;; scrolling
+(setq scroll-preserve-screen-position t
+      scroll-margin 0
+      scroll-conservatively 101)
 
 (defun new-scratch-pad ()
   (interactive)
   (let ((buffer (generate-new-buffer "scratch-pad")))
     (switch-to-buffer buffer)
     (setq buffer-offer-save t)
+    (text-mode)
     buffer))
 
 (global-set-key (kbd "C-c s") 'new-scratch-pad)
+
+(use-package paradox
+  :config (paradox-enable))
 
 (use-package tex
   :defer t
@@ -116,7 +142,7 @@
   :init
   (progn
     (setq auctex-latexmk-inherit-TeX-PDF-mode t)
-  :config (auctex-latexmk-setup)))
+    :config (auctex-latexmk-setup)))
 
 (use-package flyspell-correct-ivy
   :config
@@ -133,31 +159,72 @@
   (require 'smartparens-markdown)
   (smartparens-global-mode))
 
-(use-package undo-tree
-  :config (global-undo-tree-mode 1)
-  :bind (("C-c u" . undo-tree-visualize)))
-
-;; (use-package solarized-theme
-;;   :config
-;;   (setq x-underline-at-descent-line t)
-;;   (setq solarized-use-less-bold t)
-;;   (setq solarized-use-variable-pitch nil)
-;;   (setq solarized-high-contrast-mode-line t)
-;;   (load-theme 'solarized-light t))
-
-;; (use-package gruvbox-theme
-;;   :config (load-theme 'gruvbox-light-medium t))
-
-(use-package doom-themes
+(use-package treemacs
+  :ensure t
+  :defer t
+  :init
+  (with-eval-after-load 'winum
+    (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
   :config
-  (load-theme 'doom-one t)
-  (doom-themes-org-config)
-  (doom-themes-neotree-config)
-  :init (setq doom-tomorrow-night-padded-modeline 5))
+  (progn
+    (setq treemacs-collapse-dirs              (if (executable-find "python") 3 0)
+          treemacs-deferred-git-apply-delay   0.5
+          treemacs-display-in-side-window     t
+          treemacs-file-event-delay           5000
+          treemacs-file-follow-delay          0.2
+          treemacs-follow-after-init          t
+          treemacs-follow-recenter-distance   0.1
+          treemacs-goto-tag-strategy          'refetch-index
+          treemacs-indentation                2
+          treemacs-indentation-string         " "
+          treemacs-is-never-other-window      t
+          treemacs-no-png-images              nil
+          treemacs-project-follow-cleanup     nil
+          treemacs-persist-file               (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+          treemacs-recenter-after-file-follow nil
+          treemacs-recenter-after-tag-follow  nil
+          treemacs-show-hidden-files          t
+          treemacs-silent-filewatch           nil
+          treemacs-silent-refresh             nil
+          treemacs-sorting                    'alphabetic-desc
+          treemacs-space-between-root-nodes   t
+          treemacs-tag-follow-cleanup         t
+          treemacs-tag-follow-delay           1.5
+          treemacs-width                      35)
+
+    ;; The default width and height of the icons is 22 pixels. If you are
+    ;; using a Hi-DPI display, uncomment this to double the icon size.
+    ;;(treemacs-resize-icons 44)
+
+    (treemacs-follow-mode t)
+    (treemacs-filewatch-mode t)
+    (treemacs-fringe-indicator-mode t)
+    (pcase (cons (not (null (executable-find "git")))
+                 (not (null (executable-find "python3"))))
+      (`(t . t)
+       (treemacs-git-mode 'extended))
+      (`(t . _)
+       (treemacs-git-mode 'simple))))
+  (require 'treemacs-magit)
+  :bind
+  (:map global-map
+        ("M-0"       . treemacs-select-window)
+        ("C-x t 1"   . treemacs-delete-other-windows)
+        ("C-x t t"   . treemacs)
+        ("C-x t B"   . treemacs-bookmark)
+        ("C-x t C-t" . treemacs-find-file)
+        ("C-x t M-t" . treemacs-find-tag)))
+
+(use-package treemacs-projectile
+  :after treemacs projectile
+  :ensure t)
+
+(use-package gruvbox-theme
+  :config (load-theme 'gruvbox-dark-hard))
 
 (use-package doom-modeline
   :defer t
-  ;; :config (setq doom-modeline-height 20)
+  :config (setq doom-modeline-height 20)
   :hook (after-init . doom-modeline-init))
 
 (use-package rainbow-delimiters
@@ -166,11 +233,11 @@
 (use-package company
   :config
   (global-company-mode)
-  (setq company-global-modes '(not text-mode term-mode org-mode))
+  (setq company-global-modes '(not text-mode term-mode org-mode markdown-mode gfm-mode))
   (setq company-selection-wrap-around t
         company-show-numbers t
         company-tooltip-align-annotations t
-        company-idle-delay 0.2
+        company-idle-delay 0
         company-require-match nil
         company-minimum-prefix-length 2)
   ;; ;; Employ completion selection statistics for completion suggestions
@@ -187,26 +254,11 @@
   (eldoc-add-command-completions "company-")
   (eldoc-add-command-completions "python-indent-dedent-line-backspace")
   (setq elpy-modules '(elpy-module-company elpy-module-eldoc))
+  (setq python-shell-interpreter "ipython"
+        python-shell-interpreter-args "-i --simple-prompt")
   (elpy-enable)
   :bind (("M-]" . 'elpy-nav-indent-shift-right)
          ("M-[" . 'elpy-nav-indent-shift-left)))
-
-;; (use-package eglot
-;;   :config
-;;   (add-hook 'python-mode-hook 'eglot-ensure)
-;;   (setq eglot-ignored-server-capabilites '(:documentHighlightProvider)))
-
-;; (use-package anaconda-mode
-;;   :init
-;;   (progn
-;;     (add-hook 'python-mode-hook 'anaconda-mode)
-;;     (add-hook 'python-mode-hook 'anaconda-eldoc-mode)
-;;     (setq anaconda-mode-localhost-address "localhost")))
-
-;; (use-package company-anaconda
-;;   :init
-;;   (eval-after-load "company"
-;;     '(add-to-list 'company-backends '(company-anaconda :with company-capf))))
 
 (use-package ess)
 
@@ -214,19 +266,16 @@
   :config
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode)))
 
-(use-package visual-fill-column)
-
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
   :mode (("README\\.md\\'" . gfm-mode)
-         ("\\.md\\'" . markdown-mode)
+         ("\\.md\\'" . gfm-mode)
          ("\\.markdown\\'" . markdown-mode))
-  :init (setq markdown-command "multimarkdown")
+  :init (setq markdown-command "pandoc")
   :config
-  (setq visual-line-mode t)
-  (setq visual-line-column 100)
-  (add-hook 'visual-line-mode-hook #'visual-fill-column-mode)
-  (setq markdown-fontify-code-blocks-natively t))
+  (setq visual-line-column 90)
+  (setq markdown-fontify-code-blocks-natively t)
+  (setq markdown-enable-math t))
 
 (use-package recentf
   :config
@@ -247,6 +296,8 @@
   :bind (("C-s" . 'counsel-grep-or-swiper)
          ("C-r" . 'swiper)
          ("C-c C-r" . 'ivy-resume)))
+
+(use-package ivy-hydra)
 
 (use-package smex)
 
@@ -298,7 +349,7 @@
   :diminish
   :config
   (projectile-global-mode)
-  (define-key projectile-mode-map (kbd "M-p") 'projectile-command-map)
+  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
   (setq projectile-completion-system 'ivy))
 
 (use-package counsel-projectile
@@ -312,11 +363,14 @@
          ("C-\\" . 'avy-goto-line)
          ("C-;" . 'avy-goto-word-1)))
 
+(use-package ace-window
+  :bind (("M-o" . 'ace-window)))
+
 (use-package which-key
   :diminish
   :init
   (progn
-    (setq which-key-idle-delay 0.4)
+    (setq which-key-idle-delay 1.0)
     (which-key-mode)))
 
 (use-package multiple-cursors
@@ -328,18 +382,6 @@
 
 (use-package magit
   :bind (("C-x g" . magit-status)))
-
-;; (use-package diff-hl
-;;   :config
-;;   (progn
-;;     ;; Highlight changes to the current file in the fringe
-;;     (global-diff-hl-mode)
-;;     ;; Highlight changed files in the fringe of Dired
-;;     (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
-;;     ;; Fall back to the display margin, if the fringe is unavailable
-;;     (unless (display-graphic-p)
-;;       (diff-hl-margin-mode))
-;;     (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)))
 
 (use-package git-gutter-fringe
   :config
@@ -354,23 +396,17 @@
     "XX......"
     "XXX....."
     "XXXX....")
+  (set-face-attribute
+   'git-gutter:added nil :background nil)
+  (set-face-attribute
+   'git-gutter:deleted nil :background nil)
+  (set-face-attribute
+   'git-gutter:modified nil :background nil)
   (add-hook 'text-mode-hook #'git-gutter-mode)
   (add-hook 'prog-mode-hook #'git-gutter-mode)
   (add-hook 'conf-mode #'git-gutter-mode))
 
 (use-package all-the-icons)
-
-(use-package neotree
-  :bind (("<f8>" . 'neotree-toggle))
-  :config
-  (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
-  (setq neo-window-fixed-size t
-        neo-window-width 40
-        neo-show-updir-line nil
-        neo-auto-indent-point t
-        neo-vc-integration nil
-        neo-mode-line-format nil
-        projectile-switch-project-action 'neotree-projectile-action))
 
 ;; org configuration
 (use-package org-bullets
@@ -391,9 +427,7 @@
 (setq org-outline-path-complete-in-steps nil)
 (setq org-refile-allow-creating-parent-nodes 'confirm)
 (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
-;;      '(("~/org/projects.org" :maxlevel . 1) ("~/org/oc.org" :maxlevel . 1) ("~/org/ooit.org" :level . 1)))
 (setq org-agenda-show-future-repeats nil)
-;; (setq org-agenda-window-setup 'current-window)
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
@@ -413,16 +447,15 @@
 
 (setq org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
-         ((agenda "" ((org-agenda-span 1)
-                      (org-agenda-sorting-strategy
-                       (quote ((agenda time-up priority-down))))
-                      (org-deadline-warning-days 0)))
+         ((todo "" ((org-agenda-overriding-header "Sprint")
+                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
+                    (org-agenda-files '("~/org/sprint.org"))))
           (agenda "" ((org-agenda-overriding-header "\nUpcoming deadlines")
                       (org-agenda-span 7)
                       (org-agenda-time-grid nil)
                       (org-deadline-warning-days 0)
                       (org-agenda-show-all-dates nil)
-                      (org-agenda-entry-types '(:deadline))))
+                      (org-agenda-entry-types '(:deadline :scheduled))))
           (todo "" ((org-agenda-overriding-header "\nBacklog")
                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
                     (org-agenda-sorting-strategy
@@ -456,10 +489,7 @@
                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
                     (org-agenda-sorting-strategy
                      (quote ((agenda time-up priority-down))))
-                    (org-agenda-files (skip-sprint))))
-          (stuck "" ((org-agenda-entry-types '(:todo))))
-          (todo "" ((org-agenda-overriding-header "\nSomeday TODOs")
-                    (org-agenda-files '("~/org/ooit.org"))))))))
+                    (org-agenda-files (skip-sprint))))))))
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f)) '("/todo.org" "/projects.org" "/oc.org" "/sprint.org")))
@@ -478,7 +508,7 @@
 (use-package ox-pandoc)
 
 (use-package visual-regexp
-  :bind (("M-%" . vr/query-replace)))
+  :bind (("C-%" . vr/query-replace)))
 
 (use-package visual-regexp-steroids
   :after visual-regexp)
@@ -495,17 +525,18 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    (quote
-    ("190a9882bef28d7e944aa610aa68fe1ee34ecea6127239178c7ac848754992df" default)))
+    ("e2fd81495089dc09d14a88f29dfdff7645f213e2c03650ac2dd275de52a513de" default)))
  '(neo-window-fixed-size t)
  '(org-agenda-files
    (quote
-    ("~/Projects/book/introduction/cookbooks.org" "~/org/leadership.org" "~/org/todo.org" "~/org/projects.org" "~/org/oc.org" "~/org/sprint.org")))
+    ("~/org/leadership.org" "~/org/todo.org" "~/org/projects.org" "~/org/oc.org" "~/org/sprint.org")))
  '(package-selected-packages
    (quote
-    (visual-fill-column visual-regexp-steroids visual-regexp doom-modeline neotree deadgrep seoul256-theme elpy undo-tree json-mode calfw calfw-org ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile projectile gruvbox-theme zenburn-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
- '(paradox-github-token t)
+    (ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
  '(require-final-newline t)
- '(safe-local-variable-values (quote ((org-image-actual-width)))))
+ '(safe-local-variable-values (quote ((org-image-actual-width))))
+ '(tramp-default-user "folgert" nil (tramp))
+ '(tramp-syntax (quote default) nil (tramp)))
 ;; (custom-set-faces
 ;;  ;; custom-set-faces was added by Custom.
 ;;  ;; If you edit it by hand, you could mess it up, so be careful.
