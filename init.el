@@ -15,6 +15,7 @@
   (exec-path-from-shell-initialize))
 
 (customize-set-variable 'tramp-default-user "folgert")
+(setenv "LANG" "en_US.UTF-8")
 
 (eval-when-compile
   (require 'use-package))
@@ -60,33 +61,33 @@
       (comment-dwim nil))))
 
 (global-set-key (kbd "M-/") 'comment-current-line-dwim)
-(global-set-key (kbd "M-{") 'previous-buffer)
-(global-set-key (kbd "M-}") 'next-buffer)
+;; (global-set-key (kbd "M-{") 'previous-buffer)
+;; (global-set-key (kbd "M-}") 'next-buffer)
 (global-set-key (kbd "M-+")  'mode-line-other-buffer)
 
-(defun code-buffer (direction)
-  (interactive)
-  (let ((bread-crumb (buffer-name)))
-    (fset 'movement (if (string-equal direction "forward")
-                        'next-buffer
-                      'previous-buffer))
-    (movement)
-    (while
-        (and
-         (string-match-p "^\*" (buffer-name))
-         (not (equal bread-crumb (buffer-name))))
-      (movement))))
+;; (defun code-buffer (direction)
+;;   (interactive)
+;;   (let ((bread-crumb (buffer-name)))
+;;     (fset 'movement (if (string-equal direction "forward")
+;;                         'next-buffer
+;;                       'previous-buffer))
+;;     (movement)
+;;     (while
+;;         (and
+;;          (string-match-p "^\*" (buffer-name))
+;;          (not (equal bread-crumb (buffer-name))))
+;;       (movement))))
 
-(defun next-code-buffer ()
-  (interactive)
-  (code-buffer "forward"))
+;; (defun next-code-buffer ()
+;;   (interactive)
+;;   (code-buffer "forward"))
 
-(defun previous-code-buffer ()
-  (interactive)
-  (code-buffer "backward"))
+;; (defun previous-code-buffer ()
+;;   (interactive)
+;;   (code-buffer "backward"))
 
-(global-set-key [remap next-buffer] 'next-code-buffer)
-(global-set-key [remap previous-buffer] 'previous-code-buffer)
+;; (global-set-key [remap next-buffer] 'next-code-buffer)
+;; (global-set-key [remap previous-buffer] 'previous-code-buffer)
 
 (setq frame-title-format "")
 (setq mac-option-key-is-meta nil
@@ -156,7 +157,6 @@
   :diminish smartparens-mode
   :config
   (require 'smartparens-config)
-  (require 'smartparens-markdown)
   (smartparens-global-mode))
 
 (use-package treemacs
@@ -220,7 +220,7 @@
   :ensure t)
 
 (use-package gruvbox-theme
-  :config (load-theme 'gruvbox-dark-hard))
+  :config (load-theme 'gruvbox-dark-hard t))
 
 (use-package doom-modeline
   :defer t
@@ -349,8 +349,9 @@
   :diminish
   :config
   (projectile-global-mode)
-  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-  (setq projectile-completion-system 'ivy))
+  (setq projectile-completion-system 'ivy)
+  :bind-keymap
+  ("C-c p" . projectile-command-map))
 
 (use-package counsel-projectile
   :config
@@ -411,6 +412,12 @@
 ;; org configuration
 (use-package org-bullets
   :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+
+(use-package org-fancy-priorities
+  :hook
+  (org-mode . org-fancy-priorities-mode)
+  :config
+  (setq org-fancy-priorities-list '("HIGH" "MID" "LOW")))
 
 (setq org-directory "~/org")
 (setq org-default-notes-file (concat org-directory "/notes.org"))
@@ -505,6 +512,11 @@
 
 (define-key global-map "\C-co" 'counsel-find-org-file)
 
+(use-package iflipb
+  :bind*
+  (("M-}" . iflipb-next-buffer)
+   ("M-{" . iflipb-previous-buffer)))
+
 (use-package ox-pandoc)
 
 (use-package visual-regexp
@@ -523,16 +535,13 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   (quote
-    ("e2fd81495089dc09d14a88f29dfdff7645f213e2c03650ac2dd275de52a513de" default)))
  '(neo-window-fixed-size t)
  '(org-agenda-files
    (quote
     ("~/org/leadership.org" "~/org/todo.org" "~/org/projects.org" "~/org/oc.org" "~/org/sprint.org")))
  '(package-selected-packages
    (quote
-    (ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
+    (iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
  '(require-final-newline t)
  '(safe-local-variable-values (quote ((org-image-actual-width))))
  '(tramp-default-user "folgert" nil (tramp))
