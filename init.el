@@ -61,33 +61,7 @@
       (comment-dwim nil))))
 
 (global-set-key (kbd "M-/") 'comment-current-line-dwim)
-;; (global-set-key (kbd "M-{") 'previous-buffer)
-;; (global-set-key (kbd "M-}") 'next-buffer)
 (global-set-key (kbd "M-+")  'mode-line-other-buffer)
-
-;; (defun code-buffer (direction)
-;;   (interactive)
-;;   (let ((bread-crumb (buffer-name)))
-;;     (fset 'movement (if (string-equal direction "forward")
-;;                         'next-buffer
-;;                       'previous-buffer))
-;;     (movement)
-;;     (while
-;;         (and
-;;          (string-match-p "^\*" (buffer-name))
-;;          (not (equal bread-crumb (buffer-name))))
-;;       (movement))))
-
-;; (defun next-code-buffer ()
-;;   (interactive)
-;;   (code-buffer "forward"))
-
-;; (defun previous-code-buffer ()
-;;   (interactive)
-;;   (code-buffer "backward"))
-
-;; (global-set-key [remap next-buffer] 'next-code-buffer)
-;; (global-set-key [remap previous-buffer] 'previous-code-buffer)
 
 (setq frame-title-format "")
 (setq mac-option-key-is-meta nil
@@ -124,6 +98,9 @@
     buffer))
 
 (global-set-key (kbd "C-c s") 'new-scratch-pad)
+
+(use-package move-text
+  :config (move-text-default-bindings))
 
 (use-package paradox
   :config (paradox-enable))
@@ -222,10 +199,10 @@
 (use-package gruvbox-theme
   :config (load-theme 'gruvbox-dark-hard t))
 
-(use-package doom-modeline
-  :defer t
-  :config (setq doom-modeline-height 20)
-  :hook (after-init . doom-modeline-init))
+;; (use-package doom-modeline
+;;   :defer t
+;;   :config (setq doom-modeline-height 20)
+;;   :hook (after-init . doom-modeline-init))
 
 (use-package rainbow-delimiters
   :config (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
@@ -379,7 +356,8 @@
          ("C->"         . mc/mark-next-like-this)
          ("C-<"         . mc/mark-previous-like-this)
          ("C-c C-<"     . mc/mark-all-like-this)
-         ("M-<down-mouse-1>" . mc/add-cursor-on-click)))
+         ("M-<down-mouse-1>" . mc/add-cursor-on-click)
+         ("C-c m" . vr/mc-mark)))
 
 (use-package magit
   :bind (("C-x g" . magit-status)))
@@ -452,32 +430,32 @@
 (defun skip-sprint ()
   (seq-filter (lambda (x) (not (string-equal x "~/org/sprint.org"))) (org-agenda-files)))
 
-(setq org-agenda-custom-commands
+(setq org-agenda-block-separator ?\u2015
+      org-todo-keyword-faces
+      '(("WAITING"     :foreground "#fabd2f" :weight bold)
+        ("CANCELLED"   :foreground "#d3869b" :weight bold)
+        ("IN-PROGRESS" :foreground "#b8bb26" :weight bold))
+      org-priority-faces
+      '((?A . (:foreground "#d3869b" :weight bold))
+        (?B . (:foreground "#fabd2f" :weight bold))
+        (?C . (:foreground "#83a598" :weight bold)))
+      org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
-         ((todo "" ((org-agenda-overriding-header "Sprint")
-                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
-                    (org-agenda-files '("~/org/sprint.org"))))
-          (agenda "" ((org-agenda-overriding-header "\nUpcoming deadlines")
+         ((agenda "" ((org-agenda-overriding-header "Upcoming deadlines")
                       (org-agenda-span 7)
                       (org-agenda-time-grid nil)
                       (org-deadline-warning-days 0)
                       (org-agenda-show-all-dates nil)
                       (org-agenda-entry-types '(:deadline :scheduled))))
-          (todo "" ((org-agenda-overriding-header "\nBacklog")
+          (todo "" ((org-agenda-overriding-header "Projects")
+                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
+                    (org-agenda-files '("~/org/sprint.org"))))
+          (todo "" ((org-agenda-overriding-header "OC")
+                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":OC:"))))
+          (todo "" ((org-agenda-overriding-header "Backlog")
                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
-                    (org-agenda-sorting-strategy
-                     (quote ((agenda time-up priority-down))))
-                    (org-agenda-files (skip-sprint))))))
-
-        ("p" "Sprint"
-         ((todo "" ((org-agenda-overriding-header "Sprint")
-                    (org-agenda-files '("~/org/sprint.org"))
-                    (org-agenda-sorting-strategy
-                     (quote ((agenda time-up priority-down))))))))
-
-        ("b" "Backlog"
-         ((todo "" ((org-agenda-overriding-header "Backlog")
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'regexp ":OC:"))
                     (org-agenda-sorting-strategy
                      (quote ((agenda time-up priority-down))))
                     (org-agenda-files (skip-sprint))))))
@@ -486,14 +464,21 @@
          ((agenda "" ((org-agenda-span 7)
                       (org-deadline-warning-days 0)
                       (org-agenda-show-all-dates nil)))
-          (agenda "" ((org-agenda-overriding-header "\nUpcoming deadlines")
+          (agenda "" ((org-agenda-overriding-header "Upcoming deadlines")
                       (org-agenda-span 'month)
                       (org-agenda-time-grid nil)
                       (org-deadline-warning-days 0)
                       (org-agenda-show-all-dates nil)
-                      (org-agenda-entry-types '(:deadline))))          
-          (todo "" ((org-agenda-overriding-header "\nBacklog")
+                      (org-agenda-entry-types '(:deadline))))
+          (todo "" ((org-agenda-overriding-header "Projects")
+                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
+                    (org-agenda-files '("~/org/sprint.org"))))
+          (todo "" ((org-agenda-overriding-header "OC")
+                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":OC:"))))
+          (todo "" ((org-agenda-overriding-header "Backlog")
                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
+                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'regexp ":OC:"))
                     (org-agenda-sorting-strategy
                      (quote ((agenda time-up priority-down))))
                     (org-agenda-files (skip-sprint))))))))
@@ -511,6 +496,24 @@
               :caller 'counsel-find-org-file)))
 
 (define-key global-map "\C-co" 'counsel-find-org-file)
+
+(use-package org-journal
+  :init
+  (setq org-journal-dir "~/journal/")
+  (setq org-journal-date-format "#+TITLE: Journal Entry- %e %b %Y (%A)")
+  (setq org-journal-time-format ""))
+
+(defun get-journal-file-today ()
+  "Return filename for today's journal entry."
+  (let ((daily-name (format-time-string "%Y%m%d")))
+    (expand-file-name (concat org-journal-dir daily-name))))
+
+(defun journal-file-today ()
+  "Create and load a journal file based on today's date."
+  (interactive)
+  (find-file (get-journal-file-today)))
+
+(global-set-key (kbd "C-c j") 'journal-file-today)
 
 (use-package iflipb
   :bind*
@@ -541,7 +544,7 @@
     ("~/org/leadership.org" "~/org/todo.org" "~/org/projects.org" "~/org/oc.org" "~/org/sprint.org")))
  '(package-selected-packages
    (quote
-    (iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
+    (org-journal move-text iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
  '(require-final-newline t)
  '(safe-local-variable-values (quote ((org-image-actual-width))))
  '(tramp-default-user "folgert" nil (tramp))
@@ -557,5 +560,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(markdown-code-face ((t (:inherit ##)))))
+ '(markdown-code-face ((t (:inherit ##))))
+ '(org-agenda-date-today ((t (:foreground "#fdf4c1" :slant normal :weight bold :height 1.1))))
+ '(org-agenda-structure ((t (:inherit default :height 1.25)))))
 (put 'downcase-region 'disabled nil)
