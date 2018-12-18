@@ -93,10 +93,10 @@
 
 (defun new-scratch-pad ()
   (interactive)
-  (let ((buffer (generate-new-buffer "scratch-pad")))
+  (let ((buffer (generate-new-buffer "org-scratch")))
     (switch-to-buffer buffer)
     (setq buffer-offer-save t)
-    (text-mode)
+    (org-mode)
     buffer))
 
 (global-set-key (kbd "C-c s") 'new-scratch-pad)
@@ -427,7 +427,7 @@
         (setf (alist-get item ivy-initial-inputs-alist) ""))
       '(org-refile org-agenda-refile org-capture-refile))
 
-(setq org-todo-keywords '((sequence "TODO" "IN-PROGRESS" "WAITING" "|" "DONE" "CANCELLED")))
+(setq org-todo-keywords '((sequence "TODO" "NEXT" "WAITING" "|" "DONE" "CANCELLED")))
 (setq org-refile-use-outline-path 'file)
 (setq org-outline-path-complete-in-steps nil)
 (setq org-refile-allow-creating-parent-nodes 'confirm)
@@ -447,14 +447,12 @@
          "* Link [[%^{Link}][%^{Description}]] %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n"
          :empty-lines 1)))
 
-(defun skip-sprint ()
-  (seq-filter (lambda (x) (not (string-equal x "~/org/sprint.org"))) (org-agenda-files)))
-
 (setq org-agenda-block-separator ?\u2015
+      org-agenda-window-setup 'only-window
       org-todo-keyword-faces
       '(("WAITING"     :foreground "#fabd2f" :weight bold)
         ("CANCELLED"   :foreground "#d3869b" :weight bold)
-        ("IN-PROGRESS" :foreground "#b8bb26" :weight bold))
+        ("NEXT" :foreground "#b8bb26" :weight bold))
       org-priority-faces
       '((?A . (:foreground "#d3869b" :weight bold))
         (?B . (:foreground "#fabd2f" :weight bold))
@@ -467,41 +465,17 @@
                       (org-deadline-warning-days 0)
                       (org-agenda-show-all-dates nil)
                       (org-agenda-entry-types '(:deadline :scheduled))))
-          (todo "" ((org-agenda-overriding-header "Projects")
-                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
-                    (org-agenda-files '("~/org/sprint.org"))))
-          (todo "" ((org-agenda-overriding-header "OC")
-                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":OC:"))))
-          (todo "" ((org-agenda-overriding-header "Backlog")
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'regexp ":OC:"))
-                    (org-agenda-sorting-strategy
-                     (quote ((agenda time-up priority-down))))
-                    (org-agenda-files (skip-sprint))))))
+          (todo "NEXT"
+                ((org-agenda-overriding-header "Next Tasks")
+                 (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))))
+          (todo "WAITING|CANCEllED"
+                ((org-agenda-overriding-header "Stuck Tasks")
+                 (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))))
+          (todo "TODO" ((org-agenda-overriding-header "Backlog")
+                        (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
+                        (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))))
+          (todo "DONE" ((org-agenda-overriding-header "Tasks to Archive")))))))
 
-        ("w" "Wekelijkse review"
-         ((agenda "" ((org-agenda-span 7)
-                      (org-deadline-warning-days 0)
-                      (org-agenda-show-all-dates nil)))
-          (agenda "" ((org-agenda-overriding-header "Upcoming deadlines")
-                      (org-agenda-span 'month)
-                      (org-agenda-time-grid nil)
-                      (org-deadline-warning-days 0)
-                      (org-agenda-show-all-dates nil)
-                      (org-agenda-entry-types '(:deadline))))
-          (todo "" ((org-agenda-overriding-header "Projects")
-                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
-                    (org-agenda-files '("~/org/sprint.org"))))
-          (todo "" ((org-agenda-overriding-header "OC")
-                    (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":OC:"))))
-          (todo "" ((org-agenda-overriding-header "Backlog")
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
-                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'regexp ":OC:"))
-                    (org-agenda-sorting-strategy
-                     (quote ((agenda time-up priority-down))))
-                    (org-agenda-files (skip-sprint))))))))
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
@@ -534,6 +508,106 @@
   (find-file (get-journal-file-today)))
 
 (global-set-key (kbd "C-c j") 'journal-file-today)
+
+;; Hydra for org agenda (graciously taken from Spacemacs)
+(defhydra hydra-org-agenda (:pre (setq which-key-inhibit t)
+                            :post (setq which-key-inhibit nil)
+                            :hint none)
+"
+^Navigate^                 ^Headline^         ^Date^             ^Clock^      ^Filter^                 ^View^      ^Other^
+^--------^---------------- ^--------^-------- ^----^------------ ^-----^----- ^------^---------------- ^----^----- ^-----^-----------
+_n_:   next entry          _t_: toggle status _ds_: schedule     _i_:  in     _ft_: by tag             _vd_: day   _g_ rebuild agenda
+_p_:   previous entry      _r_: refile        _dd_: set deadline _O_:  out    _fr_: refile by tag      _vw_: week  _x_ exit and kill
+_SPC_: in other window     _a_: archive       _dt_: timestamp    _cq_: cancel _fc_: by category        _vm_: month _s_ save buffers
+_TAB_: & go to location    _:_: set tags      _+_:  do later     _j_:  jump   _fh_: by headline        _vy_: year  ^^
+_RET_: & del other windows _,_: set priority  _-_:  do earlier   ^^           _fx_: by regexp          _vr_: reset ^^
+^^                         ^^                 ^^                 ^^           _fd_: delete all filters ^^          ^^
+^^                         ^^                 ^^                 ^^           ^^                       ^^          ^^
+_<f12>_ quit hydra
+"
+  ;; Navigate
+  ("n" org-agenda-next-line)
+  ("p" org-agenda-previous-line)
+  ("SPC" org-agenda-show-and-scroll-up)
+  ("<tab>" org-agenda-goto :exit t)
+  ("TAB" org-agenda-goto :exit t)
+  ("RET" org-agenda-switch-to :exit t)
+  ;; Headline
+  ("t" org-agenda-todo)
+  ("r" org-agenda-refile)
+  ("a" org-agenda-archive-default)
+  (":" org-agenda-set-tags)
+  ("," org-agenda-priority)
+  ;; Date
+  ("dt" org-agenda-date-prompt)
+  ("dd" org-agenda-deadline)
+  ("+" org-agenda-do-date-later)
+  ("-" org-agenda-do-date-earlier)
+  ("ds" org-agenda-schedule)
+  ;; Clock
+  ("cq" org-agenda-clock-cancel)
+  ("j" org-agenda-clock-goto :exit t)
+  ("i" org-agenda-clock-in :exit t)
+  ("O" org-agenda-clock-out)
+  ;; Filter
+  ("fc" org-agenda-filter-by-category)
+  ("fx" org-agenda-filter-by-regexp)
+  ("ft" org-agenda-filter-by-tag)
+  ("fr" org-agenda-filter-by-tag-refine)
+  ("fh" org-agenda-filter-by-top-headline)
+  ("fd" org-agenda-filter-remove-all)
+  ;; View
+  ("vd" org-agenda-day-view)
+  ("vw" org-agenda-week-view)
+  ("vm" org-agenda-month-view)
+  ("vy" org-agenda-year-view)
+  ("vr" org-agenda-reset-view)
+  ;; Other
+  ("<f12>" nil :exit t)
+  ("g" org-agenda-redo)
+  ("s" org-save-all-org-buffers)
+  ("x" org-agenda-exit :exit t))
+
+(add-hook 'org-agenda-mode-hook (lambda () (local-set-key (kbd "<f12>") 'hydra-org-agenda/body)))
+
+(defhydra hydra-dired (:hint nil)
+  "
+^Operate^       ^View^                       ^Navigate^         ^Mark^
+^-------^------ ^----^---------------------- ^--------^-------- ^----^-----------
+_D_: delete     _RET_ open file              _P_: Up dir        _m_: mark
+_C_: copy       _o_ in other window          _n_: next line     _t_: toggle marks
+_R_: rename     _co_ display in other window _p_: previous line _u_: unmark
+_Z_: compress   _v_ view this file           _(_: show details  _U_: unmark all
+_+_: create dir _=_ view diff                ^^                 ^^
+^^              ^^                           ^^                 ^^
+_<f12>_ quit hydra
+"
+  ;; Operate
+  ("D" dired-do-delete)
+  ("C" dired-do-copy)
+  ("R" dired-do-rename)
+  ("Z" dired-do-compress)
+  ("+" dired-create-directory)
+  ;; View
+  ("RET" dired-find-file)
+  ("o" dired-find-file-other-window :exit t)
+  ("co" dired-display-file)
+  ("v" dired-view-file)
+  ("=" diredp-ediff)
+  ;; Navigate
+  ("P" dired-up-directory)
+  ("n" dired-next-line)
+  ("p" dired-previous-line)
+  ("(" dired-hide-details-mode)
+  ;; Mark
+  ("m" dired-mark)
+  ("t" dired-toggle-marks)
+  ("u" dired-unmark)
+  ("U" dired-unmark-all-marks)
+  ;; quit hydra
+  ("<f12>" nil :color blue))
+
+(define-key dired-mode-map (kbd "<f12>") 'hydra-dired/body)
 
 (defun find-notes (words)
   (interactive "sSearch for words: ")
