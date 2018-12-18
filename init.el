@@ -69,6 +69,8 @@
       mac-command-modifier 'meta
       mac-option-modifier 'none)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
+(global-set-key (kbd "C-x K") 'kill-buffer)
 
 (global-auto-revert-mode t)
 (add-hook 'text-mode-hook #'auto-fill-mode)
@@ -199,6 +201,9 @@
 (use-package gruvbox-theme
   :config (load-theme 'gruvbox-dark-hard t))
 
+;; (use-package doom-themes
+;;   :config (load-theme 'doom-one t))
+
 ;; (use-package doom-modeline
 ;;   :defer t
 ;;   :config (setq doom-modeline-height 20)
@@ -278,6 +283,10 @@
 
 (use-package smex)
 
+(defun counsel-locate-cmd-mdfind (input)
+  "Return a shell command based on INPUT."
+  (format "mdfind -interpret kind:plain-text '%s'" input))
+
 (use-package counsel
   :init (counsel-mode t)
   :bind (("C-x C-r" . counsel-recentf)
@@ -285,7 +294,8 @@
          ("C-c k" . 'counsel-ag)
          ("C-c f" . 'counsel-fzf)
          ("C-c g" . 'counsel-git)
-         ("C-c i" . 'counsel-imenu))
+         ("C-c i" . 'counsel-imenu)
+         ("C-c l" . 'counsel-locate))
   :config
   (setq counsel-git-cmd "rg --files")
   (setq counsel-grep-base-command "grep -niE %s %s")
@@ -295,7 +305,8 @@
   (setq counsel-rg-base-command
       "rg -S -M 120 --no-heading --line-number --color never %s .")
   (setq counsel-find-file-occur-cmd
-        "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first"))
+        "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
+  (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
 
 (defun search-dir-with-ag ()
   (interactive)
@@ -307,7 +318,16 @@
 
 (use-package deadgrep
   :bind*
-  ("C-c r" . deadgrep))
+  (("C-c r" . deadgrep)
+   ("C-c d" . grep-org-files))
+  :config
+  (defun grep-org-files (words)
+    (interactive "sSearch org files: ")
+    (let ((default-directory org-directory)
+          (deadgrep--file-type '(glob . "*.org"))
+          (deadgrep--context '(1 . 1))
+          (deadgrep--search-type 'regexp))
+      (deadgrep words))))
 
 (defun ivy-bibtex-format-pandoc-citation (keys)
   (concat "[" (mapconcat (lambda (key) (concat "@" key)) keys "; ") "]"))
@@ -484,7 +504,8 @@
                     (org-agenda-files (skip-sprint))))))))
 
 (setq org-agenda-files
-      (mapcar (lambda (f) (concat org-directory f)) '("/todo.org" "/projects.org" "/oc.org" "/sprint.org")))
+      (mapcar (lambda (f) (concat org-directory f))
+              '("/todo.org" "/projects.org" "/oc.org" "/sprint.org")))
 
 (defun counsel-find-org-file ()
   (interactive)
@@ -500,8 +521,7 @@
 (use-package org-journal
   :init
   (setq org-journal-dir "~/journal/")
-  (setq org-journal-date-format "#+TITLE: Journal Entry- %e %b %Y (%A)")
-  (setq org-journal-time-format ""))
+  (setq org-journal-date-format "#+TITLE: Journal Entry- %e %b %Y (%A)"))
 
 (defun get-journal-file-today ()
   "Return filename for today's journal entry."
@@ -515,10 +535,66 @@
 
 (global-set-key (kbd "C-c j") 'journal-file-today)
 
+(defun find-notes (words)
+  (interactive "sSearch for words: ")
+  (let ((program (concat (getenv "HOME") "/local/bin/find-notes.sh"))
+        (buffer-name (concat "*find-notes: " words "*")))
+    (when (get-buffer buffer-name)
+      (kill-buffer buffer-name))
+    (call-process program nil buffer-name t words)
+    (switch-to-buffer buffer-name)
+    (read-only-mode 1)
+    (grep-mode)
+    (toggle-truncate-lines)
+    (beginning-of-buffer)
+    (dolist (word (split-string words))
+      (highlight-regexp word))))
+
+(global-set-key (kbd "C-c n") 'find-notes)
+
 (use-package iflipb
   :bind*
   (("M-}" . iflipb-next-buffer)
    ("M-{" . iflipb-previous-buffer)))
+
+(use-package smerge-mode
+  :config
+  (defhydra smerge-hydra
+    (:color pink :hint nil :post (smerge-auto-leave))
+    "
+^Move^       ^Keep^               ^Diff^                 ^Other^
+^^-----------^^-------------------^^---------------------^^-------
+_n_ext       _b_ase               _<_: upper/base        _C_ombine
+_p_rev       _u_pper              _=_: upper/lower       _r_esolve
+^^           _l_ower              _>_: base/lower        _k_ill current
+^^           _a_ll                _R_efine
+^^           _RET_: current       _E_diff
+"
+    ("n" smerge-next)
+    ("p" smerge-prev)
+    ("b" smerge-keep-base)
+    ("u" smerge-keep-upper)
+    ("l" smerge-keep-lower)
+    ("a" smerge-keep-all)
+    ("RET" smerge-keep-current)
+    ("\C-m" smerge-keep-current)
+    ("<" smerge-diff-base-upper)
+    ("=" smerge-diff-upper-lower)
+    (">" smerge-diff-base-lower)
+    ("R" smerge-refine)
+    ("E" smerge-ediff)
+    ("C" smerge-combine-with-next)
+    ("r" smerge-resolve)
+    ("k" smerge-kill-current)
+    ("ZZ" (lambda ()
+            (interactive)
+            (save-buffer)
+            (bury-buffer))
+     "Save and bury buffer" :color blue)
+    ("q" nil "cancel" :color blue))
+  :hook (magit-diff-visit-file . (lambda ()
+                                   (when smerge-mode
+                                     (smerge-hydra/body)))))
 
 (use-package ox-pandoc)
 
@@ -545,6 +621,7 @@
  '(package-selected-packages
    (quote
     (org-journal move-text iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
+ '(pdf-view-use-imagemagick t)
  '(require-final-newline t)
  '(safe-local-variable-values (quote ((org-image-actual-width))))
  '(tramp-default-user "folgert" nil (tramp))
