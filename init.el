@@ -292,7 +292,6 @@
   :bind (("C-x C-r" . counsel-recentf)
          ("C-c r" . 'counsel-rg)
          ("C-c k" . 'counsel-ag)
-         ("C-c f" . 'counsel-fzf)
          ("C-c g" . 'counsel-git)
          ("C-c i" . 'counsel-imenu)
          ("C-c l" . 'counsel-locate))
@@ -479,7 +478,7 @@
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/todo.org" "/projects.org" "/oc.org" "/sprint.org")))
+              '("/todo.org" "/projects.org" "/oc.org" "/sprint.org" "/project-todos.org")))
 
 (defun counsel-find-org-file ()
   (interactive)
@@ -508,6 +507,37 @@
   (find-file (get-journal-file-today)))
 
 (global-set-key (kbd "C-c j") 'journal-file-today)
+
+;; org-projectile for project bases org projects.
+(defvar project-todos "project-todos.org")
+(defvar org-capture-before-config nil)
+
+(defadvice org-capture (before save-config activate)
+  "Save the window configuration before `org-capture'."
+  (setq org-capture-before-config (current-window-configuration)))
+
+(add-hook 'org-capture-mode-hook 'delete-other-windows)
+
+(defun org-capture-cleanup ()
+  "Clean up the frame created while capturing via org-projectile."
+  (when (get-buffer project-todos)
+    (kill-buffer project-todos))
+  (when org-capture-before-config
+    (set-window-configuration org-capture-before-config)))
+
+(add-hook 'org-capture-after-finalize-hook 'org-capture-cleanup)
+
+(use-package org-projectile
+  :after org
+  :after projectile
+  :config
+  (progn
+    (setq org-projectile-projects-file (concat org-directory "/" project-todos))
+    (push (org-projectile-project-todo-entry :empty-lines 1) org-capture-templates)
+    (add-hook 'org-capture-mode-hook 'delete-other-windows))
+  :bind (("C-c n" . org-projectile-project-todo-completing-read)))
+
+(setq org-agenda-restore-windows-after-quit t)
 
 ;; Hydra for org agenda (graciously taken from Spacemacs)
 (defhydra hydra-org-agenda (:pre (setq which-key-inhibit t)
@@ -624,7 +654,7 @@ _<f12>_ quit hydra
     (dolist (word (split-string words))
       (highlight-regexp word))))
 
-(global-set-key (kbd "C-c n") 'find-notes)
+(global-set-key (kbd "C-c f") 'find-notes)
 
 (use-package iflipb
   :bind*
@@ -689,12 +719,15 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(neo-window-fixed-size t)
- '(org-agenda-files
+ '(org-agenda-prefix-format
    (quote
-    ("~/org/leadership.org" "~/org/todo.org" "~/org/projects.org" "~/org/oc.org" "~/org/sprint.org")))
+    ((agenda . " %i %-12:c%?-12t% s")
+     (todo . " %i %-20:c")
+     (tags . " %i %-12:c")
+     (search . " %i %-12:c"))))
  '(package-selected-packages
    (quote
-    (org-journal move-text iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
+    (org-projectile org-journal move-text iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
  '(pdf-view-use-imagemagick t)
  '(require-final-newline t)
  '(safe-local-variable-values (quote ((org-image-actual-width))))
