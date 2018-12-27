@@ -27,11 +27,12 @@
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (tooltip-mode -1)
+(fringe-mode 16) ;; I like a little more spacing
+(setq frame-title-format "")
 (show-paren-mode t)
 (blink-cursor-mode -1)
 (save-place-mode 1)
 (global-hl-line-mode 1)
-(fringe-mode 16)
 
 ;; Changes all yes/no questions to y/n type
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -47,9 +48,17 @@
           (lambda ()
             (dired-hide-details-mode 1)))
 
+(setq insert-directory-program "gls" dired-use-ls-dired t)
+
+;; Nice to viewing but not opening files in Dired
+(use-package peep-dired
+  :defer t
+  :bind (:map dired-mode-map ("P" . peep-dired)))
+
 (use-package async
   :config (setq async-bytecomp-package-mode 1))
 
+;; Stolen from somewhere. There should be a more robust way of doing this.
 (defun comment-current-line-dwim ()
   "Comment or uncomment the current line."
   (interactive)
@@ -63,7 +72,6 @@
 (global-set-key (kbd "M-/") 'comment-current-line-dwim)
 (global-set-key (kbd "M-+")  'mode-line-other-buffer)
 
-(setq frame-title-format "")
 (setq mac-option-key-is-meta nil
       mac-command-key-is-meta t
       mac-command-modifier 'meta
@@ -105,7 +113,9 @@
   :config (move-text-default-bindings))
 
 (use-package paradox
-  :config (paradox-enable))
+  :config
+  (setq paradox-execute-asynchronously t)
+  (paradox-enable))
 
 (use-package tex
   :defer t
@@ -201,6 +211,9 @@
 (use-package gruvbox-theme
   :config (load-theme 'gruvbox-dark-hard t))
 
+(use-package minions
+  :config (minions-mode 1))
+
 ;; (use-package doom-themes
 ;;   :config (load-theme 'doom-one t))
 
@@ -235,6 +248,7 @@
   :config
   (eldoc-add-command-completions "company-")
   (eldoc-add-command-completions "python-indent-dedent-line-backspace")
+  ;; only use bare minimum of modules. No need for all fancy stuff
   (setq elpy-modules '(elpy-module-company elpy-module-eldoc))
   (setq python-shell-interpreter "ipython"
         python-shell-interpreter-args "-i --simple-prompt")
@@ -285,7 +299,7 @@
 
 (defun counsel-locate-cmd-mdfind (input)
   "Return a shell command based on INPUT."
-  (format "mdfind -interpret kind:plain-text '%s'" input))
+  (format "mdfind -interpret kind:text %s" input))
 
 (use-package counsel
   :init (counsel-mode t)
@@ -294,7 +308,8 @@
          ("C-c k" . 'counsel-ag)
          ("C-c g" . 'counsel-git)
          ("C-c i" . 'counsel-imenu)
-         ("C-c l" . 'counsel-locate))
+         ("C-c l" . 'counsel-locate)
+         ("C-c c" . 'counsel-org-capture))
   :config
   (setq counsel-git-cmd "rg --files")
   (setq counsel-grep-base-command "grep -niE %s %s")
@@ -307,18 +322,13 @@
         "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
 
-(defun search-dir-with-ag ()
-  (interactive)
-  (let ((search-dir (read-directory-name "Directory:")))
-    (counsel-ag "" search-dir)))
-
 (add-to-list 'load-path "~/.emacs.d/wgrep")
 (require 'wgrep)
 
 (use-package deadgrep
   :bind*
   (("C-c r" . deadgrep)
-   ("C-c d" . grep-org-files))
+   ("C-c f" . grep-org-files))
   :config
   (defun grep-org-files (words)
     (interactive "sSearch org files: ")
@@ -336,10 +346,34 @@
   ("C-c C-r" . ivy-bibtex)
   :config
   (setq bibtex-completion-bibliography "~/org/bibliography.bib")
+  (setq bibtex-completion-notes-path "~/org/reading-notes.org")
   (setq ivy-bibtex-default-action #'ivy-bibtex-insert-citation)
   (setq bibtex-completion-display-formats '((t . "${author:36} ${title:*} ${year:4} ${=type=:7}")))
   (setf (alist-get 'org-mode bibtex-completion-format-citation-functions)
         'bibtex-completion-format-citation-pandoc-citeproc))
+
+(defun counsel-bibtex-entry ()
+  (interactive)
+  (let ((entries '(("article" . bibtex-Article)
+                   ("book" . bibtex-Book)
+                   ("booklet" . bibtex-Booklet)
+                   ("in proceedings" . bibtex-InProceedings)
+                   ("in collection" . bibtex-InCollection)
+                   ("misc" . bibtex-Misc)
+                   ("manual" . bibtex-Manual)
+                   ("online" . bibtex-Online)
+                   ("phd thesis" . bibtex-PhdThesis)
+                   ("master's thesis" . bibtex-MastersThesis)
+                   ("collection" . bibtex-Collection)
+                   ("tech report" . bibtex-TechReport)
+                   ("unpubished" . bibtex-Unpublished))))
+    (ivy-read "BibTeX entries: " entries
+              :require-match t
+              :action (lambda (f) (funcall (cdr f)))
+              :caller 'counsel-bibtex-entry)))
+
+(use-package bibtex
+  :bind (("C-c C-e <SPC>" . 'counsel-bibtex-entry)))
 
 (use-package projectile
   :diminish
@@ -361,6 +395,7 @@
          ("C-;" . 'avy-goto-word-1)))
 
 (use-package ace-window
+  :config (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   :bind (("M-o" . 'ace-window)))
 
 (use-package which-key
@@ -380,6 +415,8 @@
 
 (use-package magit
   :bind (("C-x g" . magit-status)))
+
+(use-package forge)
 
 (use-package git-gutter-fringe
   :config
@@ -418,7 +455,7 @@
 
 (setq org-directory "~/org")
 (setq org-default-notes-file (concat org-directory "/notes.org"))
-(define-key global-map "\C-cc" 'org-capture)
+;; (define-key global-map "\C-cc" 'org-capture)
 (define-key global-map "\C-ca" 'org-agenda)
 
 ;; remove ^ for refile searches
@@ -435,23 +472,28 @@
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
-         "* TODO %^{Todo} %^G \n  %i\n  %a\n\n  %?"
+         "* TODO %^{Todo} %^G \n  %i\n\n  %?"
          :empty-lines 1)
         ("i" "Idee" entry (file+olp+datetree "~/org/ideas.org")
          "* Idee: %^{Title} %^g \n\n%?"
          :empty-lines 1)
+        ("Q" "Quote" entry (file+headline "~/org/quotes.org" "Quotes")
+         "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n%?")
+        ("r" "Read" entry (file+headline "~/org/reading-list.org" "Reading List")
+         "* TODO [[%^{Link}][%^{Title}]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n")
         ("n" "Note" entry (file+headline "~/org/todo.org" "Notes")
-         "* Note %^{Title} %^G \n\n  %?")
+         "* Note %^{Title} %^g \n\n  %i\n\n%?")
         ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
          "* Link [[%^{Link}][%^{Description}]] %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n"
          :empty-lines 1)))
 
 (setq org-agenda-block-separator ?\u2015
+      org-agenda-restore-windows-after-quit t
       org-agenda-window-setup 'only-window
       org-todo-keyword-faces
       '(("WAITING"     :foreground "#fabd2f" :weight bold)
         ("CANCELLED"   :foreground "#d3869b" :weight bold)
-        ("NEXT" :foreground "#b8bb26" :weight bold))
+        ("NEXT"        :foreground "#b8bb26" :weight bold))
       org-priority-faces
       '((?A . (:foreground "#d3869b" :weight bold))
         (?B . (:foreground "#fabd2f" :weight bold))
@@ -467,8 +509,11 @@
           (todo "NEXT"
                 ((org-agenda-overriding-header "Next Tasks")
                  (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))))
+          (todo "NEXT"
+                ((org-agenda-overriding-header "Reading List")
+                 (org-agenda-files '("~/org/reading-list.org"))))
           (todo "WAITING|CANCEllED"
-                ((org-agenda-overriding-header "Stuck Tasks")
+                ((org-agenda-overriding-header "Pending Tasks")
                  (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))))
           (todo "TODO" ((org-agenda-overriding-header "Backlog")
                         (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
@@ -479,6 +524,21 @@
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
               '("/todo.org" "/projects.org" "/oc.org" "/sprint.org" "/project-todos.org")))
+
+(defvar reading-list-file "~/org/reading-list.org")
+
+(defun update-reading-list-todo ()
+  (with-current-buffer (find-file-noselect reading-list-file)
+    (goto-char (org-find-exact-headline-in-buffer "Reading List"))
+    (let ((currently-reading (apply '+ (org-map-entries (lambda () 1) "/NEXT"))))
+      (while (and (< currently-reading 2) (or (org-goto-first-child)
+                                              (org-get-next-sibling)))
+        (when (string= (org-get-todo-state) "TODO")
+          (org-todo "NEXT")
+          (setq currently-reading (+ currently-reading 1)))))
+    (save-buffer)))
+
+(add-hook 'org-agenda-mode-hook 'update-reading-list-todo)
 
 (defun counsel-find-org-file ()
   (interactive)
@@ -516,16 +576,15 @@
   "Save the window configuration before `org-capture'."
   (setq org-capture-before-config (current-window-configuration)))
 
-(add-hook 'org-capture-mode-hook 'delete-other-windows)
-
-(defun org-capture-cleanup ()
-  "Clean up the frame created while capturing via org-projectile."
+(defun org-projectile-cleanup ()
+  "Clean up the frame created while capturing via `org-projectile'."
   (when (get-buffer project-todos)
     (kill-buffer project-todos))
   (when org-capture-before-config
     (set-window-configuration org-capture-before-config)))
 
-(add-hook 'org-capture-after-finalize-hook 'org-capture-cleanup)
+(add-hook 'org-capture-mode-hook 'delete-other-windows)
+(add-hook 'org-capture-after-finalize-hook 'org-projectile-cleanup)
 
 (use-package org-projectile
   :after org
@@ -533,11 +592,8 @@
   :config
   (progn
     (setq org-projectile-projects-file (concat org-directory "/" project-todos))
-    (push (org-projectile-project-todo-entry :empty-lines 1) org-capture-templates)
-    (add-hook 'org-capture-mode-hook 'delete-other-windows))
+    (push (org-projectile-project-todo-entry :empty-lines 1) org-capture-templates))
   :bind (("C-c n" . org-projectile-project-todo-completing-read)))
-
-(setq org-agenda-restore-windows-after-quit t)
 
 ;; Hydra for org agenda (graciously taken from Spacemacs)
 (defhydra hydra-org-agenda (:pre (setq which-key-inhibit t)
@@ -639,23 +695,6 @@ _<f12>_ quit hydra
 
 (define-key dired-mode-map (kbd "<f12>") 'hydra-dired/body)
 
-(defun find-notes (words)
-  (interactive "sSearch for words: ")
-  (let ((program (concat (getenv "HOME") "/local/bin/find-notes.sh"))
-        (buffer-name (concat "*find-notes: " words "*")))
-    (when (get-buffer buffer-name)
-      (kill-buffer buffer-name))
-    (call-process program nil buffer-name t words)
-    (switch-to-buffer buffer-name)
-    (read-only-mode 1)
-    (grep-mode)
-    (toggle-truncate-lines)
-    (beginning-of-buffer)
-    (dolist (word (split-string words))
-      (highlight-regexp word))))
-
-(global-set-key (kbd "C-c f") 'find-notes)
-
 (use-package iflipb
   :bind*
   (("M-}" . iflipb-next-buffer)
@@ -708,10 +747,18 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 (use-package visual-regexp-steroids
   :after visual-regexp)
 
+(add-to-list 'load-path "~/.emacs.d/ludwig")
+(require 'ludwig-guru)
+(ludwig-mode 1)
+
+(use-package restclient)
+
 (use-package server
   :config
   (unless (server-running-p)
     (server-start)))
+
+(require 'org-protocol)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -719,6 +766,9 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(neo-window-fixed-size t)
+ '(org-agenda-files
+   (quote
+    ("~/org/todo.org" "~/org/projects.org" "~/org/oc.org" "~/org/sprint.org" "~/org/project-todos.org")))
  '(org-agenda-prefix-format
    (quote
     ((agenda . " %i %-12:c%?-12t% s")
@@ -727,7 +777,8 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
      (search . " %i %-12:c"))))
  '(package-selected-packages
    (quote
-    (org-projectile org-journal move-text iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics org-download smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
+    (restclient esup peep-dired minions forge org-projectile org-journal move-text iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
+ '(paradox-github-token t)
  '(pdf-view-use-imagemagick t)
  '(require-final-newline t)
  '(safe-local-variable-values (quote ((org-image-actual-width))))
