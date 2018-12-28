@@ -431,13 +431,13 @@
       org-agenda-restore-windows-after-quit t
       org-agenda-window-setup 'only-window
       org-todo-keyword-faces
-      '(("WAITING"     :foreground "#fabd2f" :weight bold)
-        ("CANCELLED"   :foreground "#d3869b" :weight bold)
-        ("NEXT"        :foreground "#b8bb26" :weight bold))
+      '(("WAITING" . (font-lock-function-name-face :weight bold))
+        ("CANCELLED" . (font-lock-constant-face :weight bold))
+        ("NEXT" . (font-lock-string-face :weight bold)))
       org-priority-faces
-      '((?A . (:foreground "#d3869b" :weight bold))
-        (?B . (:foreground "#fabd2f" :weight bold))
-        (?C . (:foreground "#83a598" :weight bold)))
+      '((?A . (font-lock-constant-face :weight bold))
+        (?B . (font-lock-function-name-face :weight bold))
+        (?C . (font-lock-variable-name-face :weight bold)))
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
          ((agenda "" ((org-agenda-overriding-header "Upcoming deadlines")
