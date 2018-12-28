@@ -148,66 +148,6 @@
   (require 'smartparens-config)
   (smartparens-global-mode))
 
-(use-package treemacs
-  :ensure t
-  :defer t
-  :init
-  (with-eval-after-load 'winum
-    (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
-  :config
-  (progn
-    (setq treemacs-collapse-dirs              (if (executable-find "python") 3 0)
-          treemacs-deferred-git-apply-delay   0.5
-          treemacs-display-in-side-window     t
-          treemacs-file-event-delay           5000
-          treemacs-file-follow-delay          0.2
-          treemacs-follow-after-init          t
-          treemacs-follow-recenter-distance   0.1
-          treemacs-goto-tag-strategy          'refetch-index
-          treemacs-indentation                2
-          treemacs-indentation-string         " "
-          treemacs-is-never-other-window      t
-          treemacs-no-png-images              nil
-          treemacs-project-follow-cleanup     nil
-          treemacs-persist-file               (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
-          treemacs-recenter-after-file-follow nil
-          treemacs-recenter-after-tag-follow  nil
-          treemacs-show-hidden-files          t
-          treemacs-silent-filewatch           nil
-          treemacs-silent-refresh             nil
-          treemacs-sorting                    'alphabetic-desc
-          treemacs-space-between-root-nodes   t
-          treemacs-tag-follow-cleanup         t
-          treemacs-tag-follow-delay           1.5
-          treemacs-width                      35)
-
-    ;; The default width and height of the icons is 22 pixels. If you are
-    ;; using a Hi-DPI display, uncomment this to double the icon size.
-    ;;(treemacs-resize-icons 44)
-
-    (treemacs-follow-mode t)
-    (treemacs-filewatch-mode t)
-    (treemacs-fringe-indicator-mode t)
-    (pcase (cons (not (null (executable-find "git")))
-                 (not (null (executable-find "python3"))))
-      (`(t . t)
-       (treemacs-git-mode 'extended))
-      (`(t . _)
-       (treemacs-git-mode 'simple))))
-  (require 'treemacs-magit)
-  :bind
-  (:map global-map
-        ("M-0"       . treemacs-select-window)
-        ("C-x t 1"   . treemacs-delete-other-windows)
-        ("C-x t t"   . treemacs)
-        ("C-x t B"   . treemacs-bookmark)
-        ("C-x t C-t" . treemacs-find-file)
-        ("C-x t M-t" . treemacs-find-tag)))
-
-(use-package treemacs-projectile
-  :after treemacs projectile
-  :ensure t)
-
 (use-package gruvbox-theme
   :config (load-theme 'gruvbox-dark-hard t))
 
@@ -760,42 +700,8 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 
 (require 'org-protocol)
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(neo-window-fixed-size t)
- '(org-agenda-files
-   (quote
-    ("~/org/todo.org" "~/org/projects.org" "~/org/oc.org" "~/org/sprint.org" "~/org/project-todos.org")))
- '(org-agenda-prefix-format
-   (quote
-    ((agenda . " %i %-12:c%?-12t% s")
-     (todo . " %i %-20:c")
-     (tags . " %i %-12:c")
-     (search . " %i %-12:c"))))
- '(package-selected-packages
-   (quote
-    (restclient esup peep-dired minions forge org-projectile org-journal move-text iflipb org-fancy-priorities ivy-hydra treemacs-projectile treemacs kaolin-themes paradox visual-regexp-steroids visual-regexp neotree deadgrep seoul256-theme elpy json-mode ox-pandoc ivy-bibtex ess ess-site diff-hl flyspell-correct-ivy doom-themes auctex-latexmk auctex company company-statistics smartparens org yaml-mode org-bullets diminish counsel-projectile gruvbox-theme magit avy smex multiple-cursors which-key counsel markdown-mode exec-path-from-shell use-package)))
- '(paradox-github-token t)
- '(pdf-view-use-imagemagick t)
- '(require-final-newline t)
- '(safe-local-variable-values (quote ((org-image-actual-width))))
- '(tramp-default-user "folgert" nil (tramp))
- '(tramp-syntax (quote default) nil (tramp)))
-;; (custom-set-faces
-;;  ;; custom-set-faces was added by Custom.
-;;  ;; If you edit it by hand, you could mess it up, so be careful.
-;;  ;; Your init file should contain only one such instance.
-;;  ;; If there is more than one, they won't work right.
-;;  '(org-checkbox ((t (:background "#fdf6e3" :foreground "#657b83" :box nil)))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(markdown-code-face ((t (:inherit ##))))
- '(org-agenda-date-today ((t (:foreground "#fdf4c1" :slant normal :weight bold :height 1.1))))
- '(org-agenda-structure ((t (:inherit default :height 1.25)))))
-(put 'downcase-region 'disabled nil)
+;; config changes made through the customize UI will be stored here
+(setq custom-file (expand-file-name "custom.el" "~/.emacs.d"))
+
+(when (file-exists-p custom-file)
+  (load custom-file))
