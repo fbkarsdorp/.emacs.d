@@ -410,6 +410,17 @@
 (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
 (setq org-agenda-show-future-repeats nil)
 
+(use-package org-cliplink)
+
+(defun clip-link-http-or-file ()
+  (interactive)
+  (let ((url (org-cliplink-clipboard-content)))
+    (if (string-prefix-p "http" url)
+        (org-cliplink-capture)
+      (let ((link (read-file-name "Enter file path: "))
+            (description (read-string "Description: ")))
+        (org-make-link-string link description)))))
+
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
          "* TODO %^{Todo} %^G \n  %i\n\n  %?"
@@ -420,11 +431,12 @@
         ("Q" "Quote" entry (file+headline "~/org/quotes.org" "Quotes")
          "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n%?")
         ("r" "Read" entry (file+headline "~/org/reading-list.org" "Reading List")
-         "* TODO [[%^{Link}][%^{Title}]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n")
+         ;; "* TODO [[%^{Link}][%^{Title}]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n")
+         "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n")
         ("n" "Note" entry (file+headline "~/org/todo.org" "Notes")
          "* Note %^{Title} %^g \n\n  %i\n\n%?")
         ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
-         "* Link [[%^{Link}][%^{Description}]] %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n"
+         "* Link %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n"
          :empty-lines 1)))
 
 (setq org-agenda-block-separator ?\u2015
@@ -471,7 +483,8 @@
   (with-current-buffer (find-file-noselect reading-list-file)
     (goto-char (org-find-exact-headline-in-buffer "Reading List"))
     (let ((currently-reading (apply '+ (org-map-entries (lambda () 1) "/NEXT"))))
-      (while (and (< currently-reading 2) (or (org-goto-first-child)
+      (while (and (< currently-reading 2) (or (and (< (org-current-level) 2)
+                                                   (org-goto-first-child))
                                               (org-get-next-sibling)))
         (when (string= (org-get-todo-state) "TODO")
           (org-todo "NEXT")
