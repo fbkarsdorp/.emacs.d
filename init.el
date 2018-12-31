@@ -414,29 +414,30 @@
 
 (defun clip-link-http-or-file ()
   (interactive)
-  (let ((url (org-cliplink-clipboard-content)))
-    (if (string-prefix-p "http" url)
-        (org-cliplink-capture)
-      (let ((link (read-file-name "Enter file path: "))
-            (description (read-string "Description: ")))
-        (org-make-link-string link description)))))
+  (if (yes-or-no-p "Web link? ")
+      (org-cliplink-capture)
+    (let ((link (read-file-name "Enter file path: "))
+          (description (read-string "Description: ")))
+      (org-make-link-string link description))))
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
-         "* TODO %^{Todo} %^G \n  %i\n\n  %?"
+         "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
         ("i" "Idee" entry (file+olp+datetree "~/org/ideas.org")
-         "* Idee: %^{Title} %^g \n\n%?"
+         "* Idee: %^{Title} %^g\n\n  %?"
          :empty-lines 1)
         ("Q" "Quote" entry (file+headline "~/org/quotes.org" "Quotes")
-         "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n%?")
+         "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n  %?"
+         :empty-lines 1)
         ("r" "Read" entry (file+headline "~/org/reading-list.org" "Reading List")
-         ;; "* TODO [[%^{Link}][%^{Title}]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n")
-         "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n")
+         "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         :empty-lines 1)
         ("n" "Note" entry (file+headline "~/org/todo.org" "Notes")
-         "* Note %^{Title} %^g \n\n  %i\n\n%?")
+         "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         :empty-lines 1)
         ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
-         "* Link %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n"
+         "* Link %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)))
 
 (setq org-agenda-block-separator ?\u2015
