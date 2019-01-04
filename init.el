@@ -263,7 +263,7 @@
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
 
 (add-to-list 'load-path "~/.emacs.d/wgrep")
-(require 'wgrep)
+(require 'wgrep) ;; TODO check if bug with wgrep is solved
 
 (use-package deadgrep
   :bind*
@@ -437,7 +437,7 @@
          "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
         ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
-         "* Link %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)))
 
 (setq org-agenda-block-separator ?\u2015
@@ -476,7 +476,7 @@
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/todo.org" "/projects.org" "/oc.org" "/sprint.org" "/project-todos.org")))
+              '("/todo.org" "/oc.org" "/sprint.org" "/project-todos.org")))
 
 (defvar reading-list-file "~/org/reading-list.org")
 
