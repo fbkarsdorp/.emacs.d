@@ -549,9 +549,9 @@
 (add-hook 'org-capture-after-finalize-hook 'org-projectile-cleanup)
 
 (use-package org-projectile
-  :after org
-  :after projectile
-  :config
+  :after (org projectile)
+  :demand t
+  :config  
   (progn
     (setq org-projectile-projects-file (concat org-directory "/" project-todos))
     (setq org-confirm-elisp-link-function nil)
