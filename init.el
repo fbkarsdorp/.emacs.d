@@ -409,8 +409,15 @@
 (setq org-refile-allow-creating-parent-nodes 'confirm)
 (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
 (setq org-agenda-show-future-repeats nil)
+(setq org-src-fontify-natively t)
+
+;; (org-babel-do-load-languages
+(setq org-babel-load-languages '((R . t)))
+(setq org-confirm-babel-evaluate nil)
 
 (use-package org-cliplink)
+
+(require 'org-tempo)
 
 (defun clip-link-http-or-file ()
   (interactive)
@@ -476,7 +483,7 @@
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/todo.org" "/oc.org" "/sprint.org" "/project-todos.org")))
+              '("/todo.org" "/oc.org" "/sprint.org" "/projects.org")))
 
 (defvar reading-list-file "~/org/reading-list.org")
 
@@ -506,6 +513,7 @@
 (define-key global-map "\C-co" 'counsel-find-org-file)
 
 (use-package org-journal
+  :defer t
   :init
   (setq org-journal-dir "~/journal/")
   (setq org-journal-date-format "#+TITLE: Journal Entry- %e %b %Y (%A)"))
@@ -523,7 +531,7 @@
 (global-set-key (kbd "C-c j") 'journal-file-today)
 
 ;; org-projectile for project bases org projects.
-(defvar project-todos "project-todos.org")
+(defvar project-todos "projects.org")
 (defvar org-capture-before-config nil)
 
 (defadvice org-capture (before save-config activate)
@@ -546,6 +554,9 @@
   :config
   (progn
     (setq org-projectile-projects-file (concat org-directory "/" project-todos))
+    (setq org-confirm-elisp-link-function nil)
+    (setq org-projectile-capture-template
+          "* TODO %^{Todo} \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?")
     (push (org-projectile-project-todo-entry :empty-lines 1) org-capture-templates))
   :bind (("C-c n" . org-projectile-project-todo-completing-read)))
 
@@ -556,7 +567,7 @@
 "
 ^Navigate^                 ^Headline^         ^Date^             ^Clock^      ^Filter^                 ^View^      ^Other^
 ^--------^---------------- ^--------^-------- ^----^------------ ^-----^----- ^------^---------------- ^----^----- ^-----^-----------
-_n_:   next entry          _t_: toggle status _ds_: schedule     _i_:  in     _ft_: by tag             _vd_: day   _g_ rebuild agenda
+_n_:   next entry          _t_: toggle status _ds_: schedule     _I_:  in     _ft_: by tag             _vd_: day   _g_ rebuild agenda
 _p_:   previous entry      _r_: refile        _dd_: set deadline _O_:  out    _fr_: refile by tag      _vw_: week  _x_ exit and kill
 _SPC_: in other window     _a_: archive       _dt_: timestamp    _cq_: cancel _fc_: by category        _vm_: month _s_ save buffers
 _TAB_: & go to location    _:_: set tags      _+_:  do later     _j_:  jump   _fh_: by headline        _vy_: year  ^^
@@ -587,7 +598,7 @@ _<f12>_ quit hydra
   ;; Clock
   ("cq" org-agenda-clock-cancel)
   ("j" org-agenda-clock-goto :exit t)
-  ("i" org-agenda-clock-in :exit t)
+  ("I" org-agenda-clock-in :exit t)
   ("O" org-agenda-clock-out)
   ;; Filter
   ("fc" org-agenda-filter-by-category)
