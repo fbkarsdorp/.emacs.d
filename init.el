@@ -411,9 +411,11 @@
 (setq org-agenda-show-future-repeats nil)
 (setq org-src-fontify-natively t)
 
-;; (org-babel-do-load-languages
-(setq org-babel-load-languages '((R . t)))
+(use-package ob-ipython)
+
+(setq org-babel-load-languages '((R . t) (ipython . t)))
 (setq org-confirm-babel-evaluate nil)
+(setq org-enforce-todo-dependencies t)
 
 (use-package org-cliplink)
 
@@ -450,6 +452,8 @@
 (setq org-agenda-block-separator ?\u2015
       org-agenda-restore-windows-after-quit t
       org-agenda-window-setup 'only-window
+      org-agenda-dim-blocked-tasks t
+      ;; TODO: make this a PR for gruvbox?
       org-todo-keyword-faces
       '(("WAITING" . (font-lock-function-name-face :weight bold))
         ("CANCELLED" . (font-lock-constant-face :weight bold))
