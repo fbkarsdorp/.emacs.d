@@ -461,6 +461,34 @@
                      (org-time-string-to-time
                       (org-entry-get (or pos (point)) "DEADLINE" t))))))
 
+(defun org-agenda-add-overlays (&optional line)
+  (let ((inhibit-read-only t) l c
+        (buffer-invisibility-spec '(org-link)))
+    (save-excursion
+      (goto-char (if line (point-at-bol) (point-min)))
+      (while (not (eobp))
+        (let ((org-marker (get-text-property (point) 'org-marker)))
+          (when (and org-marker
+                     (null (overlays-at (point)))
+                     (org-entry-get org-marker "DEADLINE" t))
+            (goto-char (line-end-position))
+            (let ((rest (- (window-width) (current-column))))
+              (if (> rest 0)
+                  (insert (make-string rest ? ))))
+            (let* ((ol (make-overlay (line-beginning-position)
+                                     (line-end-position)))
+                   (days (abs (time-to-number-of-days (org-todo-age-time org-marker))))
+                   (proplist (cond
+                              ((< days 1) '(face org-warning))
+                              ((< days 5) '(face org-upcoming-deadline))
+                              ((< days 30) '(face org-scheduled)))))
+                  (while proplist
+                    (overlay-put ol (car proplist) (cadr proplist))
+                    (setq proplist (cddr proplist))))))
+        (forward-line)))))
+
+(add-hook 'org-agenda-finalize-hook 'org-agenda-add-overlays)
+
 (defun clip-link-http-or-file ()
   (interactive)
   (if (yes-or-no-p "Web link? ")
