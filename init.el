@@ -4,11 +4,11 @@
 (require 'package)
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/"))
-;; (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
+(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 (package-initialize)
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Fira Code-light-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Fira Code-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
                             (height . 45) (width . 150)))
 
 (when (memq window-system '(mac ns x))
@@ -31,6 +31,7 @@
 (setq frame-title-format "")
 (show-paren-mode t)
 (blink-cursor-mode -1)
+(setq-default cursor-type 'bar)
 (save-place-mode 1)
 (global-hl-line-mode 1)
 
@@ -39,15 +40,17 @@
 ;; warn only for files larger than 100mb
 (setq large-file-warning-threshold 100000000)
 
+;; no tabs
 (setq-default indent-tabs-mode nil)
 (setq default-tab-width 4)
 (setq tab-width 4)
 (setq-default fill-column 90)
 (prefer-coding-system 'utf-8)
-(add-hook 'dired-mode-hook
-          (lambda ()
-            (dired-hide-details-mode 1)))
 
+;; Dired configurations
+(add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1)))
+(setq dired-listing-switches "-Ahl  --group-directories-first")
+(setq dired-recursive-deletes 'always)
 (setq insert-directory-program "gls" dired-use-ls-dired t)
 
 ;; Nice to viewing but not opening files in Dired
@@ -55,6 +58,7 @@
   :defer t
   :bind (:map dired-mode-map ("P" . peep-dired)))
 
+;; use async where possible
 (use-package async
   :config (setq async-bytecomp-package-mode 1))
 
@@ -72,11 +76,14 @@
 (global-set-key (kbd "M-/") 'comment-current-line-dwim)
 (global-set-key (kbd "M-+")  'mode-line-other-buffer)
 
+;; Remap meta to CMD on Mac
 (setq mac-option-key-is-meta nil
       mac-command-key-is-meta t
       mac-command-modifier 'meta
       mac-option-modifier 'none)
+
 (global-set-key (kbd "C-x C-b") 'ibuffer)
+;; Kill current buffer immediately
 (global-set-key (kbd "C-x k") 'kill-this-buffer)
 (global-set-key (kbd "C-x K") 'kill-buffer)
 
@@ -100,6 +107,7 @@
       scroll-conservatively 101)
 
 (defun new-scratch-pad ()
+  "Create a new org-mode buffer for random stuff."
   (interactive)
   (let ((buffer (generate-new-buffer "org-scratch")))
     (switch-to-buffer buffer)
@@ -126,7 +134,8 @@
           TeX-parse-self t
           TeX-PDF-mode 1
           ;; Don't insert line-break at inline math
-          LaTeX-fill-break-at-separators nil)))
+          LaTeX-fill-break-at-separators nil)
+    (add-hook 'TeX-mode-hook #'turn-on-reftex)))
 
 (use-package auctex-latexmk
   :init
@@ -149,10 +158,10 @@
   (smartparens-global-mode))
 
 (use-package gruvbox-theme
-  :config (load-theme 'gruvbox-dark-hard t))
+  :config (load-theme 'gruvbox-dark-medium t))
 
-(use-package minions
-  :config (minions-mode 1))
+;; (use-package solarized-theme
+;;   :config (load-theme 'solarized-dark))
 
 ;; (use-package doom-themes
 ;;   :config (load-theme 'doom-one t))
@@ -162,13 +171,18 @@
 ;;   :config (setq doom-modeline-height 20)
 ;;   :hook (after-init . doom-modeline-init))
 
+;; don't clutter the mode line
+(use-package minions
+  :config (minions-mode 1))
+
+;; fancy colors
 (use-package rainbow-delimiters
   :config (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
 
 (use-package company
   :config
   (global-company-mode)
-  (setq company-global-modes '(not text-mode term-mode org-mode markdown-mode gfm-mode))
+  (setq company-global-modes '(not text-mode term-mode org-mode markdown-mode gfm-mode LaTeX-mode))
   (setq company-selection-wrap-around t
         company-show-numbers t
         company-tooltip-align-annotations t
@@ -320,13 +334,20 @@
   :config
   (projectile-global-mode)
   (setq projectile-completion-system 'ivy)
+  (setq projectile-switch-project-action #'projectile-dired)
   :bind-keymap
   ("C-c p" . projectile-command-map))
 
 (use-package counsel-projectile
   :config
-  (counsel-projectile-mode))
-
+  (counsel-projectile-mode)
+  ;; I want projectile to open dired upon selecting a project. 
+  (counsel-projectile-modify-action
+   'counsel-projectile-switch-project-action
+   '((move counsel-projectile-switch-project-action-dired 1)
+     (setkey counsel-projectile-switch-project-action-dired "D"))))
+     ;; (setkey counsel-projectile-switch-project-action " "))))
+                            
 (use-package json-mode)
 
 (use-package avy
@@ -335,7 +356,12 @@
          ("C-;" . 'avy-goto-word-1)))
 
 (use-package ace-window
-  :config (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  :config
+  (set-face-attribute
+   'aw-leading-char-face nil
+   :weight 'bold
+   :height 2.0)  
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   :bind (("M-o" . 'ace-window)))
 
 (use-package which-key
@@ -391,7 +417,7 @@
   :hook
   (org-mode . org-fancy-priorities-mode)
   :config
-  (setq org-fancy-priorities-list '("HIGH" "MID" "LOW")))
+  (setq org-fancy-priorities-list '("" "" "")))
 
 (setq org-directory "~/org")
 (setq org-default-notes-file (concat org-directory "/notes.org"))
@@ -416,10 +442,31 @@
 (setq org-babel-load-languages '((R . t) (ipython . t)))
 (setq org-confirm-babel-evaluate nil)
 (setq org-enforce-todo-dependencies t)
+(setq org-log-into-drawer t)
 
 (use-package org-cliplink)
 
 (require 'org-tempo)
+
+(defun org-todo-age (&optional pos)
+  (let* ((days (time-to-number-of-days (org-todo-age-time pos)))
+         (future (if (< days 0)
+                     (all-the-icons-material "schedule":height 0.8 :v-adjust 0)
+                   (all-the-icons-material "notifications_active":height 0.8 :v-adjust 0)))
+         (days (abs days)))
+    (cond
+     ((< days 1)   (all-the-icons-material "flash_on":height 0.8 :v-adjust 0))
+     ((< days 30)  (format "%s %dd" future days))
+     ((< days 358) (format "%s >%dM" future (/ days 30)))
+     (t            (all-the-icons-material "chevron_right" :height 0.8 :v-adjust 0)))))
+
+(defun org-todo-age-time (&optional pos)
+  (let ((stamp (org-entry-get (or pos (point)) "DEADLINE" t)))
+    (when stamp
+      (time-subtract (current-time)
+                     (org-time-string-to-time
+                      (org-entry-get (or pos (point)) "DEADLINE" t))))))
+
 
 (defun clip-link-http-or-file ()
   (interactive)
@@ -464,30 +511,32 @@
         (?C . (font-lock-variable-name-face :weight bold)))
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
-         ((agenda "" ((org-agenda-overriding-header "Upcoming deadlines")
-                      (org-agenda-span 7)
-                      (org-agenda-time-grid nil)
-                      (org-deadline-warning-days 0)
-                      (org-agenda-show-all-dates nil)
-                      (org-agenda-entry-types '(:deadline :scheduled))))
+         (
+         ;; ((agenda "" ((org-agenda-overriding-header "Upcoming deadlines")
+         ;;              (org-agenda-start-on-weekday nil)
+         ;;              (org-agenda-span 10)
+         ;;              ;; (org-agenda-start-day "-3d")
+         ;;              (org-agenda-time-grid nil)
+         ;;              (org-deadline-warning-days 0)
+         ;;              (org-agenda-show-all-dates nil)
+         ;;              (org-agenda-entry-types '(:deadline))))
           (todo "NEXT"
                 ((org-agenda-overriding-header "Next Tasks")
-                 (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))))
+                 (org-agenda-sorting-strategy (quote ((agenda priority-down deadline-up category-keep))))))
           (todo "NEXT"
                 ((org-agenda-overriding-header "Reading List")
                  (org-agenda-files '("~/org/reading-list.org"))))
           (todo "WAITING|CANCEllED"
                 ((org-agenda-overriding-header "Pending Tasks")
-                 (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))))
+                 (org-agenda-sorting-strategy (quote ((agenda deadline-up priority-down))))))
           (todo "TODO" ((org-agenda-overriding-header "Backlog")
-                        (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
-                        (org-agenda-sorting-strategy (quote ((agenda time-up priority-down))))))
+                        (org-agenda-sorting-strategy (quote ((agenda priority-down deadline-up category-keep))))))
           (todo "DONE" ((org-agenda-overriding-header "Tasks to Archive")))))))
 
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/todo.org" "/oc.org" "/sprint.org" "/projects.org")))
+              '("/todo.org" "/oc.org" "/projects.org")))
 
 (defvar reading-list-file "~/org/reading-list.org")
 
