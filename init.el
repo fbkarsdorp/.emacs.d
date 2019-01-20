@@ -472,9 +472,6 @@
                      (null (overlays-at (point)))
                      (org-entry-get org-marker "DEADLINE" t))
             (goto-char (line-end-position))
-            (let ((rest (- (window-width) (current-column))))
-              (if (> rest 0)
-                  (insert (make-string rest ? ))))
             (let* ((ol (make-overlay (line-beginning-position)
                                      (line-end-position)))
                    (days (abs (time-to-number-of-days (org-todo-age-time org-marker))))
@@ -482,9 +479,8 @@
                               ((< days 1) '(face org-warning))
                               ((< days 5) '(face org-upcoming-deadline))
                               ((< days 30) '(face org-scheduled)))))
-                  (while proplist
-                    (overlay-put ol (car proplist) (cadr proplist))
-                    (setq proplist (cddr proplist))))))
+              (when proplist
+                (overlay-put ol (car proplist) (cadr proplist))))))
         (forward-line)))))
 
 (add-hook 'org-agenda-finalize-hook 'org-agenda-add-overlays)
