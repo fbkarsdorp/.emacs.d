@@ -407,17 +407,13 @@
   (add-hook 'prog-mode-hook #'git-gutter-mode)
   (add-hook 'conf-mode #'git-gutter-mode))
 
-(use-package all-the-icons)
-
-;; org configuration
-(use-package org-bullets
-  :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+;;(use-package all-the-icons)
 
 (use-package org-fancy-priorities
   :hook
   (org-mode . org-fancy-priorities-mode)
   :config
-  (setq org-fancy-priorities-list '("" "" "")))
+  (setq org-fancy-priorities-list '("HIGH" "MID" "LOW")))
 
 (setq org-directory "~/org")
 (setq org-default-notes-file (concat org-directory "/notes.org"))
@@ -436,6 +432,7 @@
 (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
 (setq org-agenda-show-future-repeats nil)
 (setq org-src-fontify-natively t)
+(setq org-hide-leading-stars t)
 
 (use-package ob-ipython)
 
@@ -450,15 +447,12 @@
 
 (defun org-todo-age (&optional pos)
   (let* ((days (time-to-number-of-days (org-todo-age-time pos)))
-         (future (if (< days 0)
-                     (all-the-icons-material "schedule":height 0.8 :v-adjust 0)
-                   (all-the-icons-material "notifications_active":height 0.8 :v-adjust 0)))
+         (future (if (< 0 days) "-" "+"))
          (days (abs days)))
     (cond
-     ((< days 1)   (all-the-icons-material "flash_on":height 0.8 :v-adjust 0))
-     ((< days 30)  (format "%s %dd" future days))
-     ((< days 358) (format "%s >%dM" future (/ days 30)))
-     (t            (all-the-icons-material "chevron_right" :height 0.8 :v-adjust 0)))))
+     ((< days 30) (format "%s%dd" future days))
+     ((< days 358) (format "%s%dm" future (/ days 30)))
+     (t            " "))))
 
 (defun org-todo-age-time (&optional pos)
   (let ((stamp (org-entry-get (or pos (point)) "DEADLINE" t)))
@@ -466,7 +460,6 @@
       (time-subtract (current-time)
                      (org-time-string-to-time
                       (org-entry-get (or pos (point)) "DEADLINE" t))))))
-
 
 (defun clip-link-http-or-file ()
   (interactive)
