@@ -447,8 +447,8 @@
 
 (defun org-todo-age (&optional pos)
   (let* ((days (time-to-number-of-days (org-todo-age-time pos)))
-         (future (if (< 0 days) "-" "+"))
-         (days (abs days)))
+         (future (if (< 0 days) "+" ""))
+         (abs days))
     (cond
      ((< days 30) (format "%s%dd" future days))
      ((< days 358) (format "%s%dm" future (/ days 30)))
@@ -457,9 +457,9 @@
 (defun org-todo-age-time (&optional pos)
   (let ((stamp (org-entry-get (or pos (point)) "DEADLINE" t)))
     (when stamp
-      (time-subtract (current-time)
-                     (org-time-string-to-time
-                      (org-entry-get (or pos (point)) "DEADLINE" t))))))
+      (time-subtract (org-time-string-to-time
+                      (org-entry-get (or pos (point)) "DEADLINE" t))
+                     (current-time)))))
 
 (defun org-agenda-add-overlays (&optional line)
   (let ((inhibit-read-only t) l c
@@ -474,7 +474,7 @@
             (goto-char (line-end-position))
             (let* ((ol (make-overlay (line-beginning-position)
                                      (line-end-position)))
-                   (days (abs (time-to-number-of-days (org-todo-age-time org-marker))))
+                   (days (time-to-number-of-days (org-todo-age-time org-marker)))
                    (proplist (cond
                               ((< days 1) '(face org-warning))
                               ((< days 5) '(face org-upcoming-deadline))
