@@ -461,6 +461,15 @@
                       (org-entry-get (or pos (point)) "DEADLINE" t))
                      (current-time)))))
 
+(defun org-compare-todo-age (a b)
+  (let ((time-a (org-todo-age-time (get-text-property 0 'org-hd-marker a)))
+        (time-b (org-todo-age-time (get-text-property 0 'org-hd-marker b))))
+    (if (time-less-p time-a time-b)
+        -1
+      (if (equal time-a time-b)
+          0
+        1))))
+
 (defun org-agenda-add-overlays (&optional line)
   (let ((inhibit-read-only t) l c
         (buffer-invisibility-spec '(org-link)))
@@ -517,6 +526,7 @@
       org-agenda-restore-windows-after-quit t
       org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
+      org-agenda-cmp-user-defined (quote org-compare-todo-age)
       ;; TODO: make this a PR for gruvbox?
       org-todo-keyword-faces
       '(("WAITING" . (font-lock-function-name-face :weight bold))
@@ -539,15 +549,15 @@
          ;;              (org-agenda-entry-types '(:deadline))))
           (todo "NEXT"
                 ((org-agenda-overriding-header "Next Tasks")
-                 (org-agenda-sorting-strategy (quote ((agenda priority-down deadline-up category-keep))))))
+                 (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
           (todo "NEXT"
                 ((org-agenda-overriding-header "Reading List")
                  (org-agenda-files '("~/org/reading-list.org"))))
           (todo "WAITING|CANCEllED"
                 ((org-agenda-overriding-header "Pending Tasks")
-                 (org-agenda-sorting-strategy (quote ((agenda deadline-up priority-down))))))
+                 (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
           (todo "TODO" ((org-agenda-overriding-header "Backlog")
-                        (org-agenda-sorting-strategy (quote ((agenda priority-down deadline-up category-keep))))))
+                        (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
           (todo "DONE" ((org-agenda-overriding-header "Tasks to Archive")))))))
 
 
