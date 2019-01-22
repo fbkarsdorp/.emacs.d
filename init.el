@@ -450,8 +450,8 @@
          (future (if (< 0 days) "+" ""))
          (abs days))
     (cond
-     ((< days 30) (format "%s%dd" future days))
-     ((< days 358) (format "%s%dm" future (/ days 30)))
+     ((< days 30) (format "%4s" (format "%s%dd" future days)))
+     ((< days 358) (format "%4s" (format "%s%dm" future (/ days 30))))
      (t            " "))))
 
 (defun org-todo-age-time (&optional pos)
