@@ -795,6 +795,27 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 
 (use-package restclient)
 
+(use-package langtool
+  :defer 1
+  :config
+  ;; install with `brew install languagetool`
+  (setq langtool-language-tool-server-jar "/usr/local/Cellar/languagetool/4.4/libexec/languagetool-server.jar")
+  (setq langtool-default-language "en-US")
+
+  (defhydra hydra-langtool (:color pink
+                            :hint nil)
+"
+_i_nit  /  _c_orrect  /  _n_ext error  /  _p_rev error  /  _d_one
+"
+      ("n"  langtool-goto-next-error)
+      ("p"  langtool-goto-previous-error)
+      ("i"  langtool-check)
+      ("c"  langtool-correct-buffer)
+      ("d"  langtool-check-done :color blue :exit t))
+  (dolist (m (list org-mode-map markdown-mode-map TeX-mode-map))
+    (bind-key "C-c h l" 'hydra-langtool/body m)))
+
+
 (use-package server
   :config
   (unless (server-running-p)
