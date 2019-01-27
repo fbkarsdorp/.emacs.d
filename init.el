@@ -439,36 +439,38 @@
 (setq org-babel-load-languages '((R . t) (ipython . t)))
 (setq org-confirm-babel-evaluate nil)
 (setq org-enforce-todo-dependencies t)
+(setq org-log-done 'time)
 (setq org-log-into-drawer t)
 
 (use-package org-cliplink)
 
-(require 'org-tempo)
+;; (require 'org-tempo)
 
-(defun org-todo-age (&optional pos)
-  (let* ((days (time-to-number-of-days (org-todo-age-time pos)))
+(defun org-deadline-ahead (&optional pos)
+  (let* ((days (time-to-number-of-days (org-deadline-ahead-time pos)))
          (future (if (< 0 days) "+" ""))
-         (abs days))
+         (days (fceiling days)))
     (cond
      ((< days 30) (format "%4s" (format "%s%dd" future days)))
      ((< days 358) (format "%4s" (format "%s%dm" future (/ days 30))))
      (t            " "))))
 
-(defun org-todo-age-time (&optional pos)
+(defun org-deadline-ahead-time (&optional pos)
   (let ((stamp (org-entry-get (or pos (point)) "DEADLINE" t)))
     (when stamp
       (time-subtract (org-time-string-to-time
                       (org-entry-get (or pos (point)) "DEADLINE" t))
                      (current-time)))))
 
-(defun org-compare-todo-age (a b)
-  (let ((time-a (org-todo-age-time (get-text-property 0 'org-hd-marker a)))
-        (time-b (org-todo-age-time (get-text-property 0 'org-hd-marker b))))
-    (if (time-less-p time-a time-b)
-        -1
-      (if (equal time-a time-b)
-          0
-        1))))
+;; Custom sort function, after deadline-up broke with a recent update.
+;; (defun org-compare-deadline-date (a b)
+;;   (let ((time-a (org-deadline-ahead-time (get-text-property 0 'org-hd-marker a)))
+;;         (time-b (org-deadline-ahead-time (get-text-property 0 'org-hd-marker b))))
+;;     (if (time-less-p time-a time-b)
+;;         -1
+;;       (if (equal time-a time-b)
+;;           0
+;;         1))))
 
 (defun org-agenda-add-overlays (&optional line)
   (let ((inhibit-read-only t) l c
@@ -479,11 +481,12 @@
         (let ((org-marker (get-text-property (point) 'org-marker)))
           (when (and org-marker
                      (null (overlays-at (point)))
+                     (not (org-entry-get org-marker "CLOSED" t))
                      (org-entry-get org-marker "DEADLINE" t))
             (goto-char (line-end-position))
             (let* ((ol (make-overlay (line-beginning-position)
                                      (line-end-position)))
-                   (days (time-to-number-of-days (org-todo-age-time org-marker)))
+                   (days (time-to-number-of-days (org-deadline-ahead-time org-marker)))
                    (proplist (cond
                               ((< days 1) '(face org-warning))
                               ((< days 5) '(face org-upcoming-deadline))
@@ -526,7 +529,8 @@
       org-agenda-restore-windows-after-quit t
       org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
-      org-agenda-cmp-user-defined (quote org-compare-todo-age)
+      ;; Was needed with a recent update of org. Reverted back to 9.2 for now.
+      ;; org-agenda-cmp-user-defined (quote org-compare-deadline-date)
       ;; TODO: make this a PR for gruvbox?
       org-todo-keyword-faces
       '(("WAITING" . (font-lock-function-name-face :weight bold))
@@ -538,26 +542,17 @@
         (?C . (font-lock-variable-name-face :weight bold)))
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
-         (
-         ;; ((agenda "" ((org-agenda-overriding-header "Upcoming deadlines")
-         ;;              (org-agenda-start-on-weekday nil)
-         ;;              (org-agenda-span 10)
-         ;;              ;; (org-agenda-start-day "-3d")
-         ;;              (org-agenda-time-grid nil)
-         ;;              (org-deadline-warning-days 0)
-         ;;              (org-agenda-show-all-dates nil)
-         ;;              (org-agenda-entry-types '(:deadline))))
-          (todo "NEXT"
+         ((todo "NEXT"
                 ((org-agenda-overriding-header "Next Tasks")
-                 (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
+                 (org-agenda-sorting-strategy '(priority-down deadline-up category-keep))))
           (todo "NEXT"
                 ((org-agenda-overriding-header "Reading List")
                  (org-agenda-files '("~/org/reading-list.org"))))
           (todo "WAITING|CANCEllED"
                 ((org-agenda-overriding-header "Pending Tasks")
-                 (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
+                 (org-agenda-sorting-strategy '(priority-down deadline-up category-keep))))
           (todo "TODO" ((org-agenda-overriding-header "Backlog")
-                        (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
+                        (org-agenda-sorting-strategy '(priority-down deadline-up category-keep))))
           (todo "DONE" ((org-agenda-overriding-header "Tasks to Archive")))))))
 
 
