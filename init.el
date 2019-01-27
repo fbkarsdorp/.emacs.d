@@ -75,6 +75,7 @@
 
 (global-set-key (kbd "M-/") 'comment-current-line-dwim)
 (global-set-key (kbd "M-+")  'mode-line-other-buffer)
+(global-set-key (kbd "M-`") 'other-frame)
 
 ;; Remap meta to CMD on Mac
 (setq mac-option-key-is-meta nil
