@@ -328,6 +328,7 @@
               :caller 'counsel-bibtex-entry)))
 
 (use-package bibtex
+  :defer t
   :bind (("C-c C-e <SPC>" . 'counsel-bibtex-entry)))
 
 (use-package projectile
