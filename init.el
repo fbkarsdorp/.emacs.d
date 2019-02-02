@@ -794,7 +794,6 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 (use-package visual-regexp-steroids
   :after visual-regexp)
 
-(add-to-list 'load-path "~/.emacs.d/ludwig")
 (require 'ludwig-guru)
 (ludwig-mode 1)
 
