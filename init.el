@@ -507,6 +507,9 @@
           (description (read-string "Description: ")))
       (org-make-link-string link description))))
 
+(require 'org-done-statistics)
+(define-key global-map "\C-cd" 'org-done-count-per-category)
+
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
          "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
