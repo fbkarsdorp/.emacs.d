@@ -1,11 +1,13 @@
 ;;; -*- lexical-binding: t -*-
 ;;; init.el --- This is where all emacs start.
 
-(require 'package)
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/"))
-;; (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
+(setq gc-cons-threshold 100000000) 
+(add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
+
 (package-initialize)
+(setq package-archives (append
+			package-archives
+			'(("melpa" . "https://melpa.org/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
                             (font . "-*-Fira Code-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
@@ -34,6 +36,7 @@
 (setq-default cursor-type 'bar)
 (save-place-mode 1)
 (global-hl-line-mode 1)
+(add-to-list 'load-path "~/.emacs.d/elisp")
 
 ;; Changes all yes/no questions to y/n type
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -110,7 +113,7 @@
 (defun new-scratch-pad ()
   "Create a new org-mode buffer for random stuff."
   (interactive)
-  (let ((buffer (generate-new-buffer "org-scratch")))
+  (let ((buffer (generate-new-buffer "*org-scratch*")))
     (switch-to-buffer buffer)
     (setq buffer-offer-save t)
     (org-mode)
@@ -419,7 +422,7 @@
 
 (setq org-directory "~/org")
 (setq org-default-notes-file (concat org-directory "/notes.org"))
-;; (define-key global-map "\C-cc" 'org-capture)
+;;(define-key global-map "\C-cc" 'org-capture)
 (define-key global-map "\C-ca" 'org-agenda)
 
 ;; remove ^ for refile searches
@@ -445,7 +448,6 @@
 (setq org-log-into-drawer t)
 
 (use-package org-cliplink)
-
 ;; (require 'org-tempo)
 
 (defun org-deadline-ahead (&optional pos)
