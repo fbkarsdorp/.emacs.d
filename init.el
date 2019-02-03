@@ -1,8 +1,8 @@
 ;;; -*- lexical-binding: t -*-
 ;;; init.el --- This is where all emacs start.
 
-(setq gc-cons-threshold 100000000) 
-(add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
+;; (setq gc-cons-threshold 100000000) 
+;; (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
 
 (package-initialize)
 (setq package-archives (append
@@ -351,7 +351,7 @@
    'counsel-projectile-switch-project-action
    '((move counsel-projectile-switch-project-action-dired 1)
      (setkey counsel-projectile-switch-project-action-dired "D"))))
-     ;; (setkey counsel-projectile-switch-project-action " "))))
+;; (setkey counsel-projectile-switch-project-action " "))))
                             
 (use-package json-mode)
 
@@ -438,6 +438,7 @@
 (setq org-agenda-show-future-repeats nil)
 (setq org-src-fontify-natively t)
 (setq org-hide-leading-stars t)
+(setq org-agenda-search-view-always-boolean t)
 
 (use-package ob-ipython)
 
