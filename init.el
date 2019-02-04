@@ -139,13 +139,9 @@
           TeX-PDF-mode 1
           ;; Don't insert line-break at inline math
           LaTeX-fill-break-at-separators nil)
-    (add-hook 'TeX-mode-hook #'turn-on-reftex)))
-
-(use-package auctex-latexmk
-  :init
-  (progn
-    (setq auctex-latexmk-inherit-TeX-PDF-mode t)
-    :config (auctex-latexmk-setup)))
+    (add-hook 'TeX-mode-hook #'turn-on-reftex))
+  :config
+  (bind-key "C-c h l" 'hydra-langtool/body TeX-mode-map))
 
 (use-package flyspell-correct-ivy
   :config
@@ -332,6 +328,7 @@
 
 (use-package bibtex
   :defer t
+  :mode "\\.bib$"
   :bind (("C-c C-e <SPC>" . 'counsel-bibtex-entry)))
 
 (use-package projectile
@@ -351,9 +348,9 @@
    'counsel-projectile-switch-project-action
    '((move counsel-projectile-switch-project-action-dired 1)
      (setkey counsel-projectile-switch-project-action-dired "D"))))
-;; (setkey counsel-projectile-switch-project-action " "))))
                             
-(use-package json-mode)
+(use-package json-mode
+  :mode "\\.json$")
 
 (use-package avy
   :bind (("C-'" . 'avy-goto-char)
@@ -387,7 +384,8 @@
 (use-package magit
   :bind (("C-x g" . magit-status)))
 
-(use-package forge)
+(use-package forge
+  :after magit)
 
 (use-package git-gutter-fringe
   :config
@@ -440,7 +438,8 @@
 (setq org-hide-leading-stars t)
 (setq org-agenda-search-view-always-boolean t)
 
-(use-package ob-ipython)
+(use-package ob-ipython
+  :after org)
 
 (setq org-babel-load-languages '((R . t) (ipython . t)))
 (setq org-confirm-babel-evaluate nil)
@@ -787,7 +786,8 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
                                    (when smerge-mode
                                      (smerge-hydra/body)))))
 
-(use-package ox-pandoc)
+(use-package ox-pandoc
+  :defer t)
 
 (use-package visual-regexp
   :bind (("C-%" . vr/query-replace)))
@@ -816,17 +816,12 @@ _i_nit  /  _c_orrect  /  _n_ext error  /  _p_rev error  /  _d_one
       ("p"  langtool-goto-previous-error)
       ("i"  langtool-check)
       ("c"  langtool-correct-buffer)
-      ("d"  langtool-check-done :color blue :exit t))
-  (dolist (m (list org-mode-map markdown-mode-map TeX-mode-map))
-    (bind-key "C-c h l" 'hydra-langtool/body m)))
-
+      ("d"  langtool-check-done :color blue :exit t)))
 
 (use-package server
   :config
   (unless (server-running-p)
     (server-start)))
-
-(require 'org-protocol)
 
 ;; config changes made through the customize UI will be stored here
 (setq custom-file (expand-file-name "custom.el" "~/.emacs.d"))
