@@ -4,10 +4,12 @@
 ;; (setq gc-cons-threshold 100000000) 
 ;; (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
 
+(setq load-prefer-newer t)
 (package-initialize)
 (setq package-archives (append
 			package-archives
-			'(("melpa" . "https://melpa.org/packages/"))))
+			'(("melpa" . "https://melpa.org/packages/")
+                          ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
                             (font . "-*-Fira Code-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
@@ -22,6 +24,8 @@
 (eval-when-compile
   (require 'use-package))
 (setq use-package-always-ensure t)
+(setq use-package-compute-statistics t)
+
 (require 'diminish)
 (require 'bind-key)
 
@@ -143,14 +147,6 @@
   :config
   (bind-key "C-c h l" 'hydra-langtool/body TeX-mode-map))
 
-(use-package flyspell-correct-ivy
-  :config
-  (setq-default ispell-program-name "hunspell")
-  (setq ispell-really-hunspell t)
-  (setq flyspell-default-dictionary "nl_NL")
-  (setenv "DICTIONARY" "nl_NL")
-  (define-key flyspell-mode-map (kbd "C-c s") 'flyspell-correct-previous-word-generic))
-
 (use-package smartparens
   :diminish smartparens-mode
   :config
@@ -160,18 +156,6 @@
 (use-package gruvbox-theme
   :config (load-theme 'gruvbox-dark-medium t))
 
-;; (use-package solarized-theme
-;;   :config (load-theme 'solarized-dark))
-
-;; (use-package doom-themes
-;;   :config (load-theme 'doom-one t))
-
-;; (use-package doom-modeline
-;;   :defer t
-;;   :config (setq doom-modeline-height 20)
-;;   :hook (after-init . doom-modeline-init))
-
-;; don't clutter the mode line
 (use-package minions
   :config (minions-mode 1))
 
@@ -199,6 +183,8 @@
   :bind (("TAB" . 'company-indent-or-complete-common)))
 
 (use-package elpy
+  :commands elpy-enable
+  :init (with-eval-after-load 'python (elpy-enable))
   :config
   (eldoc-add-command-completions "company-")
   (eldoc-add-command-completions "python-indent-dedent-line-backspace")
@@ -206,7 +192,6 @@
   (setq elpy-modules '(elpy-module-company elpy-module-eldoc))
   (setq python-shell-interpreter "ipython"
         python-shell-interpreter-args "-i --simple-prompt")
-  (elpy-enable)
   :bind (("M-]" . 'elpy-nav-indent-shift-right)
          ("M-[" . 'elpy-nav-indent-shift-left)))
 
@@ -276,8 +261,7 @@
         "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
 
-(add-to-list 'load-path "~/.emacs.d/wgrep")
-(require 'wgrep) ;; TODO check if bug with wgrep is solved
+(use-package wgrep)
 
 (use-package deadgrep
   :bind*
@@ -327,8 +311,7 @@
               :caller 'counsel-bibtex-entry)))
 
 (use-package bibtex
-  :defer t
-  :mode "\\.bib$"
+  :mode (("\\.bib$" . bibtex-mode))
   :bind (("C-c C-e <SPC>" . 'counsel-bibtex-entry)))
 
 (use-package projectile
@@ -341,6 +324,7 @@
   ("C-c p" . projectile-command-map))
 
 (use-package counsel-projectile
+  :after projectile
   :config
   (counsel-projectile-mode)
   ;; I want projectile to open dired upon selecting a project. 
@@ -408,9 +392,8 @@
    'git-gutter:modified nil :background nil)
   (add-hook 'text-mode-hook #'git-gutter-mode)
   (add-hook 'prog-mode-hook #'git-gutter-mode)
+  (add-hook 'bibtex-mode-hook #'git-gutter-mode)
   (add-hook 'conf-mode #'git-gutter-mode))
-
-;;(use-package all-the-icons)
 
 (use-package org-fancy-priorities
   :hook
@@ -466,15 +449,15 @@
                       (org-entry-get (or pos (point)) "DEADLINE" t))
                      (current-time)))))
 
-;; Custom sort function, after deadline-up broke with a recent update.
-;; (defun org-compare-deadline-date (a b)
-;;   (let ((time-a (org-deadline-ahead-time (get-text-property 0 'org-hd-marker a)))
-;;         (time-b (org-deadline-ahead-time (get-text-property 0 'org-hd-marker b))))
-;;     (if (time-less-p time-a time-b)
-;;         -1
-;;       (if (equal time-a time-b)
-;;           0
-;;         1))))
+;; Custom sort function, after deadline-up broke with a recent update (9.2.1)
+(defun org-compare-deadline-date (a b)
+  (let ((time-a (org-deadline-ahead-time (get-text-property 0 'org-hd-marker a)))
+        (time-b (org-deadline-ahead-time (get-text-property 0 'org-hd-marker b))))
+    (if (time-less-p time-a time-b)
+        -1
+      (if (equal time-a time-b)
+          0
+        1))))
 
 (defun org-agenda-add-overlays (&optional line)
   (let ((inhibit-read-only t) l c
@@ -509,8 +492,9 @@
           (description (read-string "Description: ")))
       (org-make-link-string link description))))
 
-(require 'org-done-statistics)
-(define-key global-map "\C-cd" 'org-done-count-per-category)
+(use-package org-done-statistics
+  :load-path "~/.emacs.d/elisp"
+  :bind ("C-c d" . org-done-count-per-category))
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
@@ -532,12 +516,15 @@
          "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)))
 
+(defun format-closed-query ()
+  (format "+TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" (read-string "Number of days: ")))
+
 (setq org-agenda-block-separator ?\u2015
       org-agenda-restore-windows-after-quit t
       org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
       ;; Was needed with a recent update of org. Reverted back to 9.2 for now.
-      ;; org-agenda-cmp-user-defined (quote org-compare-deadline-date)
+      org-agenda-cmp-user-defined (quote org-compare-deadline-date)
       ;; TODO: make this a PR for gruvbox?
       org-todo-keyword-faces
       '(("WAITING" . (font-lock-function-name-face :weight bold))
@@ -551,16 +538,21 @@
       '(("d" "Dagelijkse Takenlijst"
          ((todo "NEXT"
                 ((org-agenda-overriding-header "Next Tasks")
-                 (org-agenda-sorting-strategy '(priority-down deadline-up category-keep))))
+                 (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
           (todo "NEXT"
                 ((org-agenda-overriding-header "Reading List")
                  (org-agenda-files '("~/org/reading-list.org"))))
           (todo "WAITING|CANCEllED"
                 ((org-agenda-overriding-header "Pending Tasks")
-                 (org-agenda-sorting-strategy '(priority-down deadline-up category-keep))))
+                 (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
           (todo "TODO" ((org-agenda-overriding-header "Backlog")
-                        (org-agenda-sorting-strategy '(priority-down deadline-up category-keep))))
-          (todo "DONE" ((org-agenda-overriding-header "Tasks to Archive")))))))
+                        (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
+          (todo "DONE" ((org-agenda-overriding-header "Tasks to Archive")))))
+
+        ("w" "Weekly review"
+         ((tags (format-closed-query)
+                ((org-agenda-overriding-header "Overview DONE tasks")
+                 (org-agenda-archives-mode t)))))))
 
 
 (setq org-agenda-files
@@ -631,7 +623,7 @@
 (add-hook 'org-capture-after-finalize-hook 'org-projectile-cleanup)
 
 (use-package org-projectile
-  :after (org projectile)
+  :after org; projectile)
   :demand t
   :config  
   (progn
@@ -797,8 +789,6 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 
 (require 'ludwig-guru)
 (ludwig-mode 1)
-
-(use-package restclient)
 
 (use-package langtool
   :defer 1

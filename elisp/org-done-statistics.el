@@ -1,3 +1,5 @@
+(require 'org)
+
 (defun count-items (items)
   (let (counts)
     (dolist (elt items counts)
@@ -12,6 +14,8 @@
     (or (org-entry-get org-marker "ARCHIVE_CATEGORY" t)
         (org-get-category))))
 
+(defun format-category (entry)
+  (format "[[elisp:(org-projectile-open-project%%20\"%s\")][%s]]" (car entry) (car entry)))
 
 (defun get-done-tasks (days)
   (org-map-entries 'org-get-category-archive
@@ -24,11 +28,10 @@
   (insert-before-markers "  | Task | completed |\n")
   (insert-before-markers "  |-\n")
   (dolist (entry fd)
-    (insert-before-markers "  |" (format "[[elisp:(org-projectile-open-project%%20\"%s\")][%s]]" (car entry) (car entry))
+    (insert-before-markers "  |" (format-category entry)
                            "|" (format "%d" (cdr entry)) "|\n")
     (incf total (cdr entry)))
-  (insert-before-markers   "|-\n|Total:|" (format "%d" total) "|")
-  (org-table-align))
+  (insert-before-markers   "|-\n|Total:|" (format "%d" total) "|"))
 
 ;;;###autoload
 (defun org-done-count-per-category ()
@@ -40,8 +43,9 @@
          (end-day (org-read-date nil nil "today" nil)))
     (with-current-buffer (get-buffer-create "*org-statistics*")
       (erase-buffer)
-      (statistics-table fd start-day end-day)
       (org-mode)
+      (statistics-table fd start-day end-day)
+      (org-table-align)
       (view-mode)
       (goto-char 0)
       (pop-to-buffer (current-buffer)))))
