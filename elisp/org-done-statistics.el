@@ -1,4 +1,5 @@
 (require 'org)
+(require 'tabulated-list)
 
 (defun count-items (items)
   (let (counts)
@@ -49,5 +50,36 @@
       (view-mode)
       (goto-char 0)
       (pop-to-buffer (current-buffer)))))
+
+(defun list-done-items ()
+  (let ((category (org-get-category-archive)))
+    (list
+     category
+     (vector
+      category
+      (org-entry-get nil "ITEM")
+      (format-time-string "%Y-%m-%d %H:%M"
+                          (org-read-date nil t (org-entry-get nil "CLOSED")))))))
+
+(define-derived-mode org-done-statistics-mode tabulated-list-mode
+  (setq tabulated-list-format
+        ;; The sum of column width is 80 caracters:
+        #[("Project" 20 t)
+          ("Heading" 50 t)
+          ("Closed" 10 t)])
+  (tabulated-list-init-header))
+
+;;;###autoload
+(defun org-done-statistics-table ()
+  (interactive)
+  (let* ((n-days (read-string "Number of days: "))
+         (done-tasks (org-map-entries #'list-done-items
+                                      (format "TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" n-days)
+                                      'agenda-with-archives)))
+    (with-current-buffer (get-buffer-create "*use-package done statistics*")
+      (setq tabulated-list-entries done-tasks)
+      (org-done-statistics-mode)
+      (tabulated-list-print)
+      (display-buffer (current-buffer)))))
 
 (provide 'org-done-statistics)
