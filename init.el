@@ -366,7 +366,8 @@
          ("C-c m" . vr/mc-mark)))
 
 (use-package magit
-  :bind (("C-x g" . magit-status)))
+  :bind (("C-x g" . magit-status)
+         ("C-c M-g" . magit-file-popup)))
 
 (use-package forge
   :after magit)
