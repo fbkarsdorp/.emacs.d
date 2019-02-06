@@ -494,7 +494,8 @@
 
 (use-package org-done-statistics
   :load-path "~/.emacs.d/elisp"
-  :bind ("C-c d" . org-done-count-per-category))
+  :bind (("C-c d" . org-done-count-per-category)
+         ("C-c t" . org-done-statistics-table)))
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
