@@ -548,7 +548,7 @@
                  (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
           (todo "TODO" ((org-agenda-overriding-header "Backlog")
                         (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
-          (todo "DONE" ((org-agenda-overriding-header "Tasks to Archive")))))
+          (todo "DONE|CANCELLED" ((org-agenda-overriding-header "Tasks to Archive")))))
 
         ("w" "Weekly review"
          ((tags (format-closed-query)
