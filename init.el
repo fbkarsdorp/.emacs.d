@@ -1,8 +1,8 @@
 ;;; -*- lexical-binding: t -*-
 ;;; init.el --- This is where all emacs start.
 
-;; (setq gc-cons-threshold 100000000) 
-;; (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
+(setq gc-cons-threshold 100000000) 
+(add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
 
 (setq load-prefer-newer t)
 (package-initialize)
@@ -129,6 +129,7 @@
   :config (move-text-default-bindings))
 
 (use-package paradox
+  :defer t
   :config
   (setq paradox-execute-asynchronously t)
   (paradox-enable))
@@ -198,8 +199,7 @@
 (use-package ess)
 
 (use-package yaml-mode
-  :config
-  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode)))
+  :mode (("\\.yml\\'" . yaml-mode)))
 
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
@@ -261,7 +261,7 @@
         "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
 
-(use-package wgrep)
+(use-package wgrep :defer t)
 
 (use-package deadgrep
   :bind*
@@ -311,7 +311,7 @@
               :caller 'counsel-bibtex-entry)))
 
 (use-package bibtex
-  :mode (("\\.bib$" . bibtex-mode))
+  :mode (("\\.bib\\'" . bibtex-mode))
   :bind (("C-c C-e <SPC>" . 'counsel-bibtex-entry)))
 
 (use-package projectile
@@ -334,7 +334,7 @@
      (setkey counsel-projectile-switch-project-action-dired "D"))))
                             
 (use-package json-mode
-  :mode "\\.json$")
+  :mode "\\.json\\'")
 
 (use-package avy
   :bind (("C-'" . 'avy-goto-char)
@@ -431,7 +431,9 @@
 (setq org-log-done 'time)
 (setq org-log-into-drawer t)
 
-(use-package org-cliplink)
+(use-package org-cliplink
+  :after org)
+
 ;; (require 'org-tempo)
 
 (defun org-deadline-ahead (&optional pos)
@@ -579,7 +581,7 @@
 
 (defun counsel-find-org-file ()
   (interactive)
-  (let ((file-list (seq-filter (lambda (f) (s-suffix? ".org" f))
+  (let ((file-list (seq-filter (lambda (f) (string-match-p "\\.org\\'" f))
                                (directory-files "~/org"))))
     (ivy-read "org files: " file-list
               :require-match nil
@@ -625,7 +627,7 @@
 (add-hook 'org-capture-after-finalize-hook 'org-projectile-cleanup)
 
 (use-package org-projectile
-  :after org; projectile)
+  :after org
   :demand t
   :config  
   (progn
