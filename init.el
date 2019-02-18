@@ -421,6 +421,7 @@
 (setq org-src-fontify-natively t)
 (setq org-hide-leading-stars t)
 (setq org-agenda-search-view-always-boolean t)
+(setq org-use-speed-commands t)
 
 (use-package ob-ipython
   :after org)
@@ -494,6 +495,16 @@
     (let ((link (read-file-name "Enter file path: "))
           (description (read-string "Description: ")))
       (org-make-link-string link description))))
+
+(defun toggle-org-speed-keys ()
+  (interactive)
+  (if org-use-speed-commands
+      (progn
+        (setq org-use-speed-commands nil)
+        (message "Org speed commands turned off."))
+    (progn
+      (setq org-use-speed-commands t)
+      (message "Org speed commands turned on."))))
 
 (use-package org-done-statistics
   :load-path "~/.emacs.d/elisp"
