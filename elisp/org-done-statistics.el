@@ -76,7 +76,7 @@
          (done-tasks (org-map-entries #'list-done-items
                                       (format "TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" n-days)
                                       'agenda-with-archives)))
-    (with-current-buffer (get-buffer-create "*use-package done statistics*")
+    (with-current-buffer (get-buffer-create "*done statistics*")
       (setq tabulated-list-entries done-tasks)
       (org-done-statistics-mode)
       (tabulated-list-print)

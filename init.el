@@ -37,7 +37,6 @@
 (setq frame-title-format "")
 (show-paren-mode t)
 (blink-cursor-mode -1)
-(setq-default cursor-type 'bar)
 (save-place-mode 1)
 (global-hl-line-mode 1)
 (add-to-list 'load-path "~/.emacs.d/elisp")
@@ -60,7 +59,7 @@
 (setq dired-recursive-deletes 'always)
 (setq insert-directory-program "gls" dired-use-ls-dired t)
 
-;; Nice to viewing but not opening files in Dired
+;; Nice for viewing but not opening files in Dired
 (use-package peep-dired
   :defer t
   :bind (:map dired-mode-map ("P" . peep-dired)))
@@ -337,9 +336,9 @@
   :mode "\\.json\\'")
 
 (use-package avy
-  :bind (("C-'" . 'avy-goto-char)
+  :bind (("C-;" . 'avy-goto-char)
          ("C-\\" . 'avy-goto-line)
-         ("C-;" . 'avy-goto-word-1)))
+         ("C-'" . 'avy-goto-word-1)))
 
 (use-package ace-window
   :config
