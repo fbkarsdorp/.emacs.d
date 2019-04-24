@@ -227,7 +227,7 @@
   (setq ivy-re-builders-alist
         '((ivy-bibtex . ivy--regex-ignore-order)
           (t . ivy--regex-plus)))
-  :bind (("C-s" . 'counsel-grep-or-swiper)
+  :bind (("C-s" . 'swiper-isearch);;'counsel-grep-or-swiper)
          ("C-r" . 'swiper)
          ("C-c C-r" . 'ivy-resume)))
 

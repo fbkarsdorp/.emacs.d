@@ -21,5 +21,6 @@
  ;; If there is more than one, they won't work right.
  '(markdown-code-face ((t (:inherit ##))))
  '(org-agenda-structure ((t (:inherit default :height 1.25))))
- '(org-block ((t nil))))
+ '(org-block ((t (:background "#32302f"))))
+ '(org-block-begin-line ((t (:inherit org-meta-line :background "#3c3836")))))
 (put 'downcase-region 'disabled nil)
