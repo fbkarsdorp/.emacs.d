@@ -12,7 +12,7 @@
                           ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Fira Code-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Fira Code-light-normal-normal-*-12-*-*-*-m-0-iso10646-1")
                             (height . 45) (width . 150)))
 
 (when (memq window-system '(mac ns x))
@@ -31,9 +31,11 @@
 
 (setq inhibit-startup-message t)
 (tool-bar-mode -1)
+(menu-bar-mode -1)
 (scroll-bar-mode -1)
 (tooltip-mode -1)
 (fringe-mode 16) ;; I like a little more spacing
+;; (setq ns-use-proxy-icon nil)
 (setq frame-title-format "")
 (show-paren-mode t)
 (blink-cursor-mode -1)
@@ -58,11 +60,6 @@
 (setq dired-listing-switches "-Ahl  --group-directories-first")
 (setq dired-recursive-deletes 'always)
 (setq insert-directory-program "gls" dired-use-ls-dired t)
-
-;; Nice for viewing but not opening files in Dired
-(use-package peep-dired
-  :defer t
-  :bind (:map dired-mode-map ("P" . peep-dired)))
 
 ;; use async where possible
 (use-package async
@@ -111,6 +108,10 @@
 ;; scrolling
 (setq scroll-preserve-screen-position t
       scroll-margin 0
+      mac-redisplay-dont-reset-vscroll t
+      mac-mouse-wheel-smooth-scroll nil
+      mouse-wheel-scroll-amount '(1)
+      mouse-wheel-progressive-speed nil
       scroll-conservatively 101)
 
 (defun new-scratch-pad ()
@@ -156,6 +157,19 @@
 (use-package gruvbox-theme
   :config (load-theme 'gruvbox-dark-medium t))
 
+;; (use-package nord-theme
+;;   ;; :straight
+;;   ;; (nord-theme :type git :host github
+;;   ;;             :repo "arcticicestudio/nord-emacs" :branch "develop")
+;;   :defines
+;;   (nord-comment-brightness
+;;    nord-region-highlight)
+;;   :init
+;;   (setq nord-comment-brightness 15
+;;         nord-region-highlight "frost")
+;;   :config
+;; (load-theme 'nord t))
+
 (use-package minions
   :config (minions-mode 1))
 
@@ -183,8 +197,10 @@
   :bind (("TAB" . 'company-indent-or-complete-common)))
 
 (use-package elpy
-  :commands elpy-enable
-  :init (with-eval-after-load 'python (elpy-enable))
+  ;; :commands elpy-enable
+  ;; :init (with-eval-after-load 'python (elpy-enable))
+  :defer t
+  :init (advice-add 'python-mode :before 'elpy-enable)
   :config
   (eldoc-add-command-completions "company-")
   (eldoc-add-command-completions "python-indent-dedent-line-backspace")
@@ -390,7 +406,7 @@
    'git-gutter:deleted nil :background nil)
   (set-face-attribute
    'git-gutter:modified nil :background nil)
-  (add-hook 'text-mode-hook #'git-gutter-mode)
+  ;; (add-hook 'text-mode-hook #'git-gutter-mode)
   (add-hook 'prog-mode-hook #'git-gutter-mode)
   (add-hook 'bibtex-mode-hook #'git-gutter-mode)
   (add-hook 'conf-mode #'git-gutter-mode))
@@ -421,6 +437,7 @@
 (setq org-hide-leading-stars t)
 (setq org-agenda-search-view-always-boolean t)
 (setq org-use-speed-commands t)
+(setq org-latex-create-formula-image-program 'dvisvgm)
 
 (use-package ob-ipython
   :after org)
@@ -556,7 +573,7 @@
           (todo "NEXT"
                 ((org-agenda-overriding-header "Reading List")
                  (org-agenda-files '("~/org/reading-list.org"))))
-          (todo "WAITING|CANCEllED"
+          (todo "WAITING|CANCELLED"
                 ((org-agenda-overriding-header "Pending Tasks")
                  (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
           (todo "TODO" ((org-agenda-overriding-header "Backlog")
