@@ -155,20 +155,8 @@
   (smartparens-global-mode))
 
 (use-package gruvbox-theme
-  :config (load-theme 'gruvbox-dark-medium t))
-
-;; (use-package nord-theme
-;;   ;; :straight
-;;   ;; (nord-theme :type git :host github
-;;   ;;             :repo "arcticicestudio/nord-emacs" :branch "develop")
-;;   :defines
-;;   (nord-comment-brightness
-;;    nord-region-highlight)
-;;   :init
-;;   (setq nord-comment-brightness 15
-;;         nord-region-highlight "frost")
-;;   :config
-;; (load-theme 'nord t))
+  :config
+  (load-theme 'gruvbox-dark-medium t))
 
 (use-package minions
   :config (minions-mode 1))
@@ -211,7 +199,11 @@
   :bind (("M-]" . 'elpy-nav-indent-shift-right)
          ("M-[" . 'elpy-nav-indent-shift-left)))
 
-(use-package ess)
+(use-package ess
+  :config
+  (setq ess-eval-visibly 'nowait))
+
+(use-package ob-async)
 
 (use-package yaml-mode
   :mode (("\\.yml\\'" . yaml-mode)))
@@ -820,6 +812,24 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 
 (require 'ludwig-guru)
 (ludwig-mode 1)
+
+(use-package dired-sidebar
+  :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
+  :ensure t
+  :commands (dired-sidebar-toggle-sidebar)
+  :init
+  (add-hook 'dired-sidebar-mode-hook
+            (lambda ()
+              (unless (file-remote-p default-directory)
+                (auto-revert-mode))))
+  :config
+  (push 'toggle-window-split dired-sidebar-toggle-hidden-commands)
+  (push 'rotate-windows dired-sidebar-toggle-hidden-commands)
+
+  (setq dired-sidebar-subtree-line-prefix "  ")
+  (setq dired-sidebar-theme 'none)
+  (setq dired-sidebar-use-term-integration t)
+  (setq dired-sidebar-use-custom-font t))
 
 (use-package langtool
   :defer 1
