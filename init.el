@@ -42,6 +42,8 @@
 (save-place-mode 1)
 (global-hl-line-mode 1)
 (add-to-list 'load-path "~/.emacs.d/elisp")
+(setq electric-pair-mode t)
+(setq-default electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit)
 
 ;; Changes all yes/no questions to y/n type
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -76,18 +78,16 @@
       (end-of-line)
       (comment-dwim nil))))
 
-(global-set-key (kbd "M-/") 'comment-current-line-dwim)
-(global-set-key (kbd "M-+")  'mode-line-other-buffer)
-(global-set-key (kbd "M-`") 'other-frame)
-
 ;; Remap meta to CMD on Mac
 (setq mac-option-key-is-meta nil
       mac-command-key-is-meta t
       mac-command-modifier 'meta
       mac-option-modifier 'none)
 
+(global-set-key (kbd "M-/") 'comment-current-line-dwim)
+(global-set-key (kbd "M-+")  'mode-line-other-buffer)
+(global-set-key (kbd "M-`") 'other-frame)
 (global-set-key (kbd "C-x C-b") 'ibuffer)
-;; Kill current buffer immediately
 (global-set-key (kbd "C-x k") 'kill-this-buffer)
 (global-set-key (kbd "C-x K") 'kill-buffer)
 
@@ -96,7 +96,6 @@
 
 (setq ring-bell-function 'ignore)
 (setq ns-use-native-fullscreen t)
-(setq tramp-default-method "ssh")
 
 ;;*** Backups
 (setq backup-by-copying t)
@@ -146,13 +145,28 @@
           LaTeX-fill-break-at-separators nil)
     (add-hook 'TeX-mode-hook #'turn-on-reftex))
   :config
-  (bind-key "C-c h l" 'hydra-langtool/body TeX-mode-map))
+  (bind-key "C-c h l" 'hydra-langtool/body TeX-mode-map)
+  (company-auctex-init))
 
-(use-package smartparens
-  :diminish smartparens-mode
+(use-package magic-latex-buffer
+  :defer t
+  :hook (LaTeX-mode . magic-latex-buffer))
+
+(use-package company-auctex
+  :defer t)
+
+(use-package tramp
+  :ensure nil
+  :defer t
   :config
-  (require 'smartparens-config)
-  (smartparens-global-mode))
+  (setq tramp-default-method "ssh")
+  (use-package counsel-tramp
+    :bind ("C-c t" . counsel-tramp))
+  (put 'temporary-file-directory 'standard-value '("/tmp")))
+
+(defadvice load-theme (before clear-previous-themes activate)
+  "Clear existing theme settings instead of layering them"
+  (mapc #'disable-theme custom-enabled-themes))
 
 (use-package gruvbox-theme
   :config
@@ -168,7 +182,7 @@
 (use-package company
   :config
   (global-company-mode)
-  (setq company-global-modes '(not text-mode term-mode org-mode markdown-mode gfm-mode LaTeX-mode))
+  (setq company-global-modes '(not text-mode term-mode org-mode markdown-mode gfm-mode))
   (setq company-selection-wrap-around t
         company-show-numbers t
         company-tooltip-align-annotations t
@@ -186,7 +200,6 @@
 
 (use-package elpy
   ;; :commands elpy-enable
-  ;; :init (with-eval-after-load 'python (elpy-enable))
   :defer t
   :init (advice-add 'python-mode :before 'elpy-enable)
   :config
@@ -200,10 +213,12 @@
          ("M-[" . 'elpy-nav-indent-shift-left)))
 
 (use-package ess
+  :defer t
   :config
   (setq ess-eval-visibly 'nowait))
 
-(use-package ob-async)
+(use-package ob-async
+  :defer t)
 
 (use-package yaml-mode
   :mode (("\\.yml\\'" . yaml-mode)))
@@ -229,17 +244,17 @@
 (use-package ivy
   :init (ivy-mode 1)
   :config
-  (setq ivy-use-virtual-buffers t)
-  (setq enable-recursive-minibuffers t)
-  (setq ivy-display-style 'fancy)
-  (setq ivy-re-builders-alist
-        '((ivy-bibtex . ivy--regex-ignore-order)
-          (t . ivy--regex-plus)))
+  (setq ivy-use-virtual-buffers t
+        enable-recursive-minibuffers t
+        ivy-display-style 'fancy
+        ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
+                                (t . ivy--regex-plus)))
   :bind (("C-s" . 'swiper-isearch);;'counsel-grep-or-swiper)
          ("C-r" . 'swiper)
          ("C-c C-r" . 'ivy-resume)))
 
-(use-package ivy-hydra)
+(use-package ivy-hydra
+  :defer t)
 
 (use-package smex)
 
@@ -379,6 +394,9 @@
 (use-package forge
   :after magit)
 
+(use-package gitignore-templates
+  :defer t)
+
 (use-package git-gutter-fringe
   :config
   (setq-default fringes-outside-margins t)
@@ -432,15 +450,31 @@
 (setq org-latex-create-formula-image-program 'dvisvgm)
 
 (use-package ob-ipython
+  :after org
+  :defer t)
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages '((R . t) (ipython . t)))
+
+(setq my-org-structure-template-alist
+      '(("py" . "src python :results output")
+        ("r"  . "src R")
+        ("rp" . "src R :results output graphics :file")))
+(dolist (template my-org-structure-template-alist)
+  (add-to-list 'org-structure-template-alist template))
+
+(use-package org-tempo
+  :ensure nil
+  :defer t
   :after org)
 
-(setq org-babel-load-languages '((R . t) (ipython . t)))
 (setq org-confirm-babel-evaluate nil)
 (setq org-enforce-todo-dependencies t)
 (setq org-log-done 'time)
 (setq org-log-into-drawer t)
 
 (use-package org-cliplink
+  :defer t
   :after org)
 
 ;; (require 'org-tempo)
@@ -488,8 +522,8 @@
                    (days (time-to-number-of-days (org-deadline-ahead-time org-marker)))
                    (proplist (cond
                               ((< days 1) '(face org-warning))
-                              ((< days 5) '(face org-upcoming-deadline))
-                              ((< days 30) '(face org-scheduled)))))
+                              ((< days 5) '(face org-scheduled)))))
+                              ;; ((< days 30) '(face org-scheduled)))))
               (when proplist
                 (overlay-put ol (car proplist) (cadr proplist))))))
         (forward-line)))))
@@ -517,7 +551,7 @@
 (use-package org-done-statistics
   :load-path "~/.emacs.d/elisp"
   :bind (("C-c d" . org-done-count-per-category)
-         ("C-c t" . org-done-statistics-table)))
+         ("C-c e" . org-done-statistics-table)))
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
@@ -647,7 +681,7 @@
 
 (use-package org-projectile
   :after org
-  :demand t
+  :defer t
   :config  
   (progn
     (setq org-projectile-projects-file (concat org-directory "/" project-todos))
@@ -763,6 +797,7 @@ _<f12>_ quit hydra
    ("M-{" . iflipb-previous-buffer)))
 
 (use-package smerge-mode
+  :defer t
   :config
   (defhydra smerge-hydra
     (:color pink :hint nil :post (smerge-auto-leave))
@@ -805,7 +840,8 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
   :defer t)
 
 (use-package visual-regexp
-  :bind (("C-%" . vr/query-replace)))
+  :bind (("C-c %" . vr/query-replace)
+         ("C-c $" . vr/replace)))
 
 (use-package visual-regexp-steroids
   :after visual-regexp)
@@ -832,7 +868,7 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
   (setq dired-sidebar-use-custom-font t))
 
 (use-package langtool
-  :defer 1
+  :defer t
   :config
   ;; install with `brew install languagetool`
   (setq langtool-language-tool-server-jar "/usr/local/Cellar/languagetool/4.4/libexec/languagetool-server.jar")
