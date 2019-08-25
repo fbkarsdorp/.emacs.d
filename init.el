@@ -42,8 +42,6 @@
 (save-place-mode 1)
 (global-hl-line-mode 1)
 (add-to-list 'load-path "~/.emacs.d/elisp")
-(setq-default electric-pair-mode t)
-(setq-default electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit)
 
 ;; Changes all yes/no questions to y/n type
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -163,6 +161,11 @@
   (use-package counsel-tramp
     :bind ("C-c t" . counsel-tramp))
   (put 'temporary-file-directory 'standard-value '("/tmp")))
+
+(use-package smartparens
+  :config
+  (require 'smartparens-config)
+  (smartparens-global-mode 1))
 
 (defadvice load-theme (before clear-previous-themes activate)
   "Clear existing theme settings instead of layering them"
