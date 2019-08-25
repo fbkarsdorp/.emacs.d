@@ -31,7 +31,7 @@
   (dolist (entry fd)
     (insert-before-markers "  |" (format-category entry)
                            "|" (format "%d" (cdr entry)) "|\n")
-    (incf total (cdr entry)))
+    (setq total (+ (cdr entry) 1)))
   (insert-before-markers   "|-\n|Total:|" (format "%d" total) "|"))
 
 ;;;###autoload

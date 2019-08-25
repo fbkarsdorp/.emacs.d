@@ -42,7 +42,7 @@
 (save-place-mode 1)
 (global-hl-line-mode 1)
 (add-to-list 'load-path "~/.emacs.d/elisp")
-(setq electric-pair-mode t)
+(setq-default electric-pair-mode t)
 (setq-default electric-pair-inhibit-predicate 'electric-pair-conservative-inhibit)
 
 ;; Changes all yes/no questions to y/n type
@@ -182,7 +182,7 @@
 (use-package company
   :config
   (global-company-mode)
-  (setq company-global-modes '(not text-mode term-mode org-mode markdown-mode gfm-mode))
+  (setq company-global-modes '(not text-mode term-mode markdown-mode gfm-mode))
   (setq company-selection-wrap-around t
         company-show-numbers t
         company-tooltip-align-annotations t
@@ -212,13 +212,15 @@
   :bind (("M-]" . 'elpy-nav-indent-shift-right)
          ("M-[" . 'elpy-nav-indent-shift-left)))
 
+(use-package jupyter)
+
 (use-package ess
   :defer t
   :config
   (setq ess-eval-visibly 'nowait))
 
-(use-package ob-async
-  :defer t)
+;; (use-package ob-async
+;;   :defer t)
 
 (use-package yaml-mode
   :mode (("\\.yml\\'" . yaml-mode)))
@@ -249,8 +251,8 @@
         ivy-display-style 'fancy
         ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
                                 (t . ivy--regex-plus)))
-  :bind (("C-s" . 'swiper-isearch);;'counsel-grep-or-swiper)
-         ("C-r" . 'swiper)
+  :bind (("C-s" . 'swiper-isearch)
+         ("C-r" . 'swiper-backward)
          ("C-c C-r" . 'ivy-resume)))
 
 (use-package ivy-hydra
@@ -264,13 +266,14 @@
 
 (use-package counsel
   :init (counsel-mode t)
-  :bind (("C-x C-r" . counsel-recentf)
+  :bind (("C-x C-r" . 'counsel-recentf)
          ("C-c r" . 'counsel-rg)
          ("C-c k" . 'counsel-ag)
          ("C-c g" . 'counsel-git)
          ("C-c i" . 'counsel-imenu)
          ("C-c l" . 'counsel-locate)
-         ("C-c c" . 'counsel-org-capture))
+         ("C-c c" . 'counsel-org-capture)
+         ("C-x b" . 'ivy-switch-buffer))
   :config
   (setq counsel-git-cmd "rg --files")
   (setq counsel-grep-base-command "grep -niE %s %s")
@@ -419,13 +422,14 @@
   ;; (add-hook 'text-mode-hook #'git-gutter-mode)
   (add-hook 'prog-mode-hook #'git-gutter-mode)
   (add-hook 'bibtex-mode-hook #'git-gutter-mode)
-  (add-hook 'conf-mode #'git-gutter-mode))
+  (add-hook 'conf-mode #'git-gutter-mode)
+  (add-hook 'LaTeX-mode #'git-gutter-mode))
 
 (use-package org-fancy-priorities
   :hook
   (org-mode . org-fancy-priorities-mode)
   :config
-  (setq org-fancy-priorities-list '("HIGH" "MID" "LOW")))
+  (setq org-fancy-priorities-list '("" "" "")))
 
 (setq org-directory "~/org")
 (setq org-default-notes-file (concat org-directory "/notes.org"))
@@ -449,23 +453,24 @@
 (setq org-use-speed-commands t)
 (setq org-latex-create-formula-image-program 'dvisvgm)
 
-(use-package ob-ipython
-  :after org
-  :defer t)
+;; (use-package ob-ipython
+;;   :after org
+;;   :defer t)
 
 (org-babel-do-load-languages
- 'org-babel-load-languages '((R . t) (ipython . t)))
+ 'org-babel-load-languages
+ '((R . t) (python . t) (jupyter . t)))
 
 (setq my-org-structure-template-alist
       '(("py" . "src python :results output")
         ("r"  . "src R")
-        ("rp" . "src R :results output graphics :file")))
+        ("rp" . "src R :results output graphics :file")
+        ("j"  . "src jupyter-python :session py :async yes")))
 (dolist (template my-org-structure-template-alist)
   (add-to-list 'org-structure-template-alist template))
 
 (use-package org-tempo
   :ensure nil
-  :defer t
   :after org)
 
 (setq org-confirm-babel-evaluate nil)
@@ -476,8 +481,6 @@
 (use-package org-cliplink
   :defer t
   :after org)
-
-;; (require 'org-tempo)
 
 (defun org-deadline-ahead (&optional pos)
   (let* ((days (time-to-number-of-days (org-deadline-ahead-time pos)))
@@ -584,7 +587,8 @@
       org-agenda-cmp-user-defined (quote org-compare-deadline-date)
       ;; TODO: make this a PR for gruvbox?
       org-todo-keyword-faces
-      '(("WAITING" . (font-lock-function-name-face :weight bold))
+      '(("TODO" . (font-lock-variable-name-face :weight bold))
+        ("WAITING" . (font-lock-function-name-face :weight bold))
         ("CANCELLED" . (font-lock-constant-face :weight bold))
         ("NEXT" . (font-lock-string-face :weight bold)))
       org-priority-faces
@@ -594,17 +598,17 @@
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
          ((todo "NEXT"
-                ((org-agenda-overriding-header "Next Tasks")
+                ((org-agenda-overriding-header " Next Tasks")
                  (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
           (todo "NEXT"
-                ((org-agenda-overriding-header "Reading List")
+                ((org-agenda-overriding-header " Reading List")
                  (org-agenda-files '("~/org/reading-list.org"))))
           (todo "WAITING|CANCELLED"
-                ((org-agenda-overriding-header "Pending Tasks")
+                ((org-agenda-overriding-header " Pending Tasks")
                  (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
-          (todo "TODO" ((org-agenda-overriding-header "Backlog")
+          (todo "TODO" ((org-agenda-overriding-header " Backlog")
                         (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
-          (todo "DONE|CANCELLED" ((org-agenda-overriding-header "Tasks to Archive")))))
+          (todo "DONE|CANCELLED" ((org-agenda-overriding-header " Tasks to Archive")))))
 
         ("w" "Weekly review"
          ((tags (format-closed-query)
