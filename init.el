@@ -12,8 +12,10 @@
                           ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Fira Code-light-normal-normal-*-12-*-*-*-m-0-iso10646-1")
-                            (height . 45) (width . 150)))
+                            (font . "-*-Fira Code-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (height . 45) (width . 150)
+                            (inhibit-double-buffering . t)))
+(set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") nil 'prepend)
 
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
@@ -40,8 +42,11 @@
 (show-paren-mode t)
 (blink-cursor-mode -1)
 (save-place-mode 1)
-(global-hl-line-mode 1)
-(add-to-list 'load-path "~/.emacs.d/elisp")
+
+(use-package hl-line
+  :ensure nil
+  :custom-face (hl-line ((t (:extend t))))
+  :hook (after-init . global-hl-line-mode))
 
 ;; Changes all yes/no questions to y/n type
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -146,9 +151,16 @@
   (bind-key "C-c h l" 'hydra-langtool/body TeX-mode-map)
   (company-auctex-init))
 
-(use-package magic-latex-buffer
-  :defer t
-  :hook (LaTeX-mode . magic-latex-buffer))
+(use-package ox-latex
+  :ensure nil
+  :config
+  (add-to-list 'org-latex-packages-alist '("" "minted"))
+  (setq org-latex-listings 'minted)
+
+  (setq org-latex-pdf-process
+        '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")))
 
 (use-package company-auctex
   :defer t)
@@ -172,13 +184,14 @@
   (mapc #'disable-theme custom-enabled-themes))
 
 (use-package gruvbox-theme
-  :config
-  (load-theme 'gruvbox-dark-medium t))
+  :config (load-theme 'gruvbox-dark-soft t))
+
+;; (use-package night-owl-theme
+;;   :config (load-theme 'night-owl))
 
 (use-package minions
   :config (minions-mode 1))
 
-;; fancy colors
 (use-package rainbow-delimiters
   :config (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
 
@@ -192,9 +205,6 @@
         company-idle-delay 0
         company-require-match nil
         company-minimum-prefix-length 2)
-  ;; ;; Employ completion selection statistics for completion suggestions
-  (use-package company-statistics
-    :config (company-statistics-mode))
   ;; Bind next and previous selection to more intuitive keys
   (define-key company-active-map (kbd "C-n") 'company-select-next)
   (define-key company-active-map (kbd "C-p") 'company-select-previous)
@@ -215,15 +225,21 @@
   :bind (("M-]" . 'elpy-nav-indent-shift-right)
          ("M-[" . 'elpy-nav-indent-shift-left)))
 
-(use-package jupyter)
+(use-package jupyter
+  :defer t)
 
 (use-package ess
   :defer t
   :config
   (setq ess-eval-visibly 'nowait))
 
-;; (use-package ob-async
-;;   :defer t)
+(use-package stan-mode)
+
+(use-package company-stan
+  :hook (stan-mode . company-stan-setup))
+
+(use-package eldoc-stan
+  :hook (stan-mode . eldoc-stan-setup))
 
 (use-package yaml-mode
   :mode (("\\.yml\\'" . yaml-mode)))
@@ -244,7 +260,7 @@
   (setq recentf-exclude '("COMMIT_MSG" "COMMIT_EDITMSG" "github.*txt$"
                           "[0-9a-f]\\{32\\}-[0-9a-f]\\{32\\}\\.org"
                           ".*png$" ".*cache$"))
-  (setq recentf-max-saved-items 1000))
+  (setq recentf-max-saved-items 500))
 
 (use-package ivy
   :init (ivy-mode 1)
@@ -257,6 +273,16 @@
   :bind (("C-s" . 'swiper-isearch)
          ("C-r" . 'swiper-backward)
          ("C-c C-r" . 'ivy-resume)))
+
+(use-package ivy-posframe
+  :after ivy
+  :diminish
+  :config
+  (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-top-center))
+        ivy-posframe-height-alist '((t . 10))
+        ivy-posframe-parameters '((internal-border-width . 10)))
+  (setq ivy-posframe-width 88)
+  (ivy-posframe-mode +1))
 
 (use-package ivy-hydra
   :defer t)
@@ -361,8 +387,41 @@
    '((move counsel-projectile-switch-project-action-dired 1)
      (setkey counsel-projectile-switch-project-action-dired "D"))))
                             
-(use-package json-mode
-  :mode "\\.json\\'")
+;(use-package json-mode
+;  :mode "\\.json\\'")
+
+(use-package elfeed
+  :commands elfeed
+  :config
+  (setq elfeed-use-curl t)
+  (setq elfeed-feeds
+        '(;("https://statmodeling.stat.columbia.edu/feed/" stats modeling)
+          ("http://ehbea2020.com/feed/" conference)
+          ("https://rs.io/index.xml" stats data)
+          ("https://www.kaylinpavlik.com/rss/" data stats text-mining)
+          ("https://pure.knaw.nl/portal/en/organisations/meertens-institute(5faf53f1-ef25-4d7a-a95d-93c50bf0dc5b)/publications.rss?ordering=researchOutputOrderByPublicationYear&pageSize=100&page=0&descending=true" meertens)          
+          ("https://pure.knaw.nl/portal/en/organisations/meertens-instituut--nederlandse-etnologie(6ae411a6-9e14-45e0-af24-83d764add8a4)/publications.rss?pageSize=100&page=0&descending=true" meertens etnologie)
+          ("https://pure.knaw.nl/portal/en/organisations/meertens-instituut--variatielinguistiek(e1d4ebc4-143a-4523-8771-9fff0a3ee3e5)/publications.rss?pageSize=100&page=0&descending=true" meertens taalkunde)
+          ("https://tedunderwood.com/feed/" DH literature)
+          ("http://peterturchin.com/feed/" evolution turchin)
+          ("https://www.cambridge.org/core/rss/product/id/F9A99C4602D4F4A5277A9D3A04AE7353" evolution journal)
+          ("http://feeds.nature.com/palcomms/rss/current" palgrave)))
+  
+  (setq elfeed-show-mode-hook
+        (lambda ()
+          (set-face-attribute 'variable-pitch (selected-frame) :font (font-spec :family "Gentium Plus" :size 16))
+          (setq fill-column 120)
+          (setq elfeed-show-entry-switch #'my-show-elfeed)))
+
+  (defun my-show-elfeed (buffer)
+    (with-current-buffer buffer
+      (setq buffer-read-only nil)
+      (goto-char (point-min))
+      (re-search-forward "\n\n")
+      (fill-individual-paragraphs (point) (point-max))
+      (setq buffer-read-only t))
+    (switch-to-buffer buffer))
+  :bind (("C-c C-e f" . 'elfeed)))
 
 (use-package avy
   :bind (("C-;" . 'avy-goto-char)
@@ -398,7 +457,9 @@
          ("C-c M-g" . magit-file-popup)))
 
 (use-package forge
-  :after magit)
+  :after magit
+  :config
+  (setq ghub-use-workaround-for-emacs-bug 'force))
 
 (use-package gitignore-templates
   :defer t)
@@ -416,13 +477,6 @@
     "XX......"
     "XXX....."
     "XXXX....")
-  (set-face-attribute
-   'git-gutter:added nil :background nil)
-  (set-face-attribute
-   'git-gutter:deleted nil :background nil)
-  (set-face-attribute
-   'git-gutter:modified nil :background nil)
-  ;; (add-hook 'text-mode-hook #'git-gutter-mode)
   (add-hook 'prog-mode-hook #'git-gutter-mode)
   (add-hook 'bibtex-mode-hook #'git-gutter-mode)
   (add-hook 'conf-mode #'git-gutter-mode)
@@ -455,10 +509,14 @@
 (setq org-agenda-search-view-always-boolean t)
 (setq org-use-speed-commands t)
 (setq org-latex-create-formula-image-program 'dvisvgm)
-
-;; (use-package ob-ipython
-;;   :after org
-;;   :defer t)
+(add-to-list 'org-latex-classes
+             '("tufte-handout"
+               "\\documentclass{tufte-handout}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
 
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -467,7 +525,7 @@
 (setq my-org-structure-template-alist
       '(("py" . "src python :results output")
         ("r"  . "src R")
-        ("rp" . "src R :results output graphics :file")
+        ("rp" . "src R :results output graphics :file (concat \"figures/\" (org-id-new) \".png\")")
         ("j"  . "src jupyter-python :session py :async yes")))
 (dolist (template my-org-structure-template-alist)
   (add-to-list 'org-structure-template-alist template))
@@ -554,11 +612,6 @@
       (setq org-use-speed-commands t)
       (message "Org speed commands turned on."))))
 
-(use-package org-done-statistics
-  :load-path "~/.emacs.d/elisp"
-  :bind (("C-c d" . org-done-count-per-category)
-         ("C-c e" . org-done-statistics-table)))
-
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
          "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
@@ -584,7 +637,7 @@
 
 (setq org-agenda-block-separator ?\u2015
       org-agenda-restore-windows-after-quit t
-      org-agenda-window-setup 'only-window
+      ;; org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
       ;; Was needed with a recent update of org. Reverted back to 9.2 for now.
       org-agenda-cmp-user-defined (quote org-compare-deadline-date)
@@ -843,54 +896,12 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
                                    (when smerge-mode
                                      (smerge-hydra/body)))))
 
-(use-package ox-pandoc
-  :defer t)
-
 (use-package visual-regexp
   :bind (("C-c %" . vr/query-replace)
          ("C-c $" . vr/replace)))
 
 (use-package visual-regexp-steroids
   :after visual-regexp)
-
-(require 'ludwig-guru)
-(ludwig-mode 1)
-
-(use-package dired-sidebar
-  :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
-  :ensure t
-  :commands (dired-sidebar-toggle-sidebar)
-  :init
-  (add-hook 'dired-sidebar-mode-hook
-            (lambda ()
-              (unless (file-remote-p default-directory)
-                (auto-revert-mode))))
-  :config
-  (push 'toggle-window-split dired-sidebar-toggle-hidden-commands)
-  (push 'rotate-windows dired-sidebar-toggle-hidden-commands)
-
-  (setq dired-sidebar-subtree-line-prefix "  ")
-  (setq dired-sidebar-theme 'none)
-  (setq dired-sidebar-use-term-integration t)
-  (setq dired-sidebar-use-custom-font t))
-
-(use-package langtool
-  :defer t
-  :config
-  ;; install with `brew install languagetool`
-  (setq langtool-language-tool-server-jar "/usr/local/Cellar/languagetool/4.4/libexec/languagetool-server.jar")
-  (setq langtool-default-language "en-US")
-
-  (defhydra hydra-langtool (:color pink
-                            :hint nil)
-"
-_i_nit  /  _c_orrect  /  _n_ext error  /  _p_rev error  /  _d_one
-"
-      ("n"  langtool-goto-next-error)
-      ("p"  langtool-goto-previous-error)
-      ("i"  langtool-check)
-      ("c"  langtool-correct-buffer)
-      ("d"  langtool-check-done :color blue :exit t)))
 
 (use-package server
   :config
