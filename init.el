@@ -12,7 +12,7 @@
                           ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Fira Code-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Iosevka-light-normal-normal-*-14-*-*-*-m-0-iso10646-1")
                             (height . 45) (width . 150)
                             (inhibit-double-buffering . t)))
 (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") nil 'prepend)
@@ -174,20 +174,22 @@
     :bind ("C-c t" . counsel-tramp))
   (put 'temporary-file-directory 'standard-value '("/tmp")))
 
-(use-package smartparens
-  :config
-  (require 'smartparens-config)
-  (smartparens-global-mode 1))
+(use-package electric
+  :ensure nil
+  :config (electric-pair-mode 1))
 
 (defadvice load-theme (before clear-previous-themes activate)
   "Clear existing theme settings instead of layering them"
   (mapc #'disable-theme custom-enabled-themes))
 
-(use-package gruvbox-theme
-  :config (load-theme 'gruvbox-dark-soft t))
+;; (use-package gruvbox-theme
+;;   :config (load-theme 'gruvbox-dark-soft t))
 
-;; (use-package night-owl-theme
-;;   :config (load-theme 'night-owl))
+(use-package doom-themes
+  :config (load-theme 'doom-gruvbox t))
+
+(use-package doom-modeline
+  :hook (after-init . doom-modeline-mode))
 
 (use-package minions
   :config (minions-mode 1))
@@ -274,15 +276,15 @@
          ("C-r" . 'swiper-backward)
          ("C-c C-r" . 'ivy-resume)))
 
-(use-package ivy-posframe
-  :after ivy
-  :diminish
-  :config
-  (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-top-center))
-        ivy-posframe-height-alist '((t . 10))
-        ivy-posframe-parameters '((internal-border-width . 10)))
-  (setq ivy-posframe-width 88)
-  (ivy-posframe-mode +1))
+;; (use-package ivy-posframe
+;;   :after ivy
+;;   :diminish
+;;   :config
+;;   (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-top-center))
+;;         ivy-posframe-height-alist '((t . 10))
+;;         ivy-posframe-parameters '((internal-border-width . 10)))
+;;   (setq ivy-posframe-width 88)
+;;   (ivy-posframe-mode +1))
 
 (use-package ivy-hydra
   :defer t)
@@ -674,7 +676,7 @@
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/todo.org" "/oc.org" "/projects.org")))
+              '("/todo.org" "/oc.org" "/projects.org" "/2020.org")))
 
 (defvar reading-list-file "~/org/reading-list.org")
 
