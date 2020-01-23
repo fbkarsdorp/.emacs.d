@@ -12,7 +12,7 @@
                           ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Iosevka-light-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+                            ;; (font . "-*-Iosevka-light-normal-normal-*-14-*-*-*-m-0-iso10646-1")
                             (height . 45) (width . 150)
                             (inhibit-double-buffering . t)))
 (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") nil 'prepend)
@@ -62,9 +62,9 @@
 
 ;; Dired configurations
 (add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1)))
-(setq dired-listing-switches "-Ahl  --group-directories-first")
-(setq dired-recursive-deletes 'always)
-(setq insert-directory-program "gls" dired-use-ls-dired t)
+;; (setq dired-listing-switches "-Ahl  --group-directories-first")
+;; (setq dired-recursive-deletes 'always)
+;; (setq insert-directory-program "gls" dired-use-ls-dired t)
 
 ;; use async where possible
 (use-package async
@@ -218,6 +218,7 @@
   :defer t
   :init (advice-add 'python-mode :before 'elpy-enable)
   :config
+  (setq elpy-rpc-python-command "python3")
   (eldoc-add-command-completions "company-")
   (eldoc-add-command-completions "python-indent-dedent-line-backspace")
   ;; only use bare minimum of modules. No need for all fancy stuff
@@ -227,8 +228,8 @@
   :bind (("M-]" . 'elpy-nav-indent-shift-right)
          ("M-[" . 'elpy-nav-indent-shift-left)))
 
-(use-package jupyter
-  :defer t)
+;; (use-package jupyter
+;;   :defer t)
 
 (use-package ess
   :defer t
@@ -411,7 +412,6 @@
   
   (setq elfeed-show-mode-hook
         (lambda ()
-          (set-face-attribute 'variable-pitch (selected-frame) :font (font-spec :family "Gentium Plus" :size 16))
           (setq fill-column 120)
           (setq elfeed-show-entry-switch #'my-show-elfeed)))
 
@@ -522,7 +522,7 @@
 
 (org-babel-do-load-languages
  'org-babel-load-languages
- '((R . t) (python . t) (jupyter . t)))
+ '((R . t) (python . t)));; (jupyter . t)))
 
 (setq my-org-structure-template-alist
       '(("py" . "src python :results output")
@@ -552,7 +552,7 @@
     (cond
      ((< days 30) (format "%4s" (format "%s%dd" future days)))
      ((< days 358) (format "%4s" (format "%s%dm" future (/ days 30))))
-     (t            " "))))
+     (t            ""))))
 
 (defun org-deadline-ahead-time (&optional pos)
   (let ((stamp (org-entry-get (or pos (point)) "DEADLINE" t)))
@@ -595,6 +595,12 @@
         (forward-line)))))
 
 (add-hook 'org-agenda-finalize-hook 'org-agenda-add-overlays)
+(defface org-deadline-face '((t (:inherit (font-lock-comment-face))))
+  "org-deadline-face")
+
+(add-hook 'org-agenda-finalize-hook
+          (lambda ()
+          (highlight-regexp "^[[:blank:]]+\\+[0-9]+[md]" 'org-deadline-face)))
 
 (defun clip-link-http-or-file ()
   (interactive)
@@ -638,12 +644,12 @@
   (format "+TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" (read-string "Number of days: ")))
 
 (setq org-agenda-block-separator ?\u2015
+      org-super-agenda-header-separator (concat "\n" (make-string 123 ?\u2500) "\n")
       org-agenda-restore-windows-after-quit t
       ;; org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
       ;; Was needed with a recent update of org. Reverted back to 9.2 for now.
       org-agenda-cmp-user-defined (quote org-compare-deadline-date)
-      ;; TODO: make this a PR for gruvbox?
       org-todo-keyword-faces
       '(("TODO" . (font-lock-variable-name-face :weight bold))
         ("WAITING" . (font-lock-function-name-face :weight bold))
@@ -655,44 +661,50 @@
         (?C . (font-lock-variable-name-face :weight bold)))
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
-         ((todo "NEXT"
-                ((org-agenda-overriding-header " Next Tasks")
-                 (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
-          (todo "NEXT"
-                ((org-agenda-overriding-header " Reading List")
-                 (org-agenda-files '("~/org/reading-list.org"))))
-          (todo "WAITING|CANCELLED"
-                ((org-agenda-overriding-header " Pending Tasks")
-                 (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
-          (todo "TODO" ((org-agenda-overriding-header " Backlog")
-                        (org-agenda-sorting-strategy '(priority-down user-defined-up category-keep))))
-          (todo "DONE|CANCELLED" ((org-agenda-overriding-header " Tasks to Archive")))))
+          ((todo "TODO|NEXT|WAITING"
+                 ((org-agenda-overriding-header nil)
+                  (org-agenda-prefix-format " %?(org-deadline-ahead) ")
+                  (org-super-agenda-groups
+                   '((:auto-map (lambda (item)
+                      (-when-let* ((marker (or (get-text-property 0 'org-marker item)
+                                               (get-text-property 0 'org-hd-marker item)))
+                                   (file-path (->> marker marker-buffer buffer-file-name))
+                                   (directory-name (->> file-path file-name-directory
+                                                        directory-file-name file-name-nondirectory)))
+                        (concat " " (upcase-initials directory-name) "\n"))))))))
+           (todo "NEXT"
+                 ((org-agenda-overriding-header "  Reading List")
+                  (org-agenda-prefix-format " %?(org-deadline-ahead)")
+                  (org-agenda-files '("~/org/reading-list.org"))))
+           (todo "DONE|CANCELLED" ((org-agenda-overriding-header "  Tasks to Archive")))))
 
         ("w" "Weekly review"
          ((tags (format-closed-query)
                 ((org-agenda-overriding-header "Overview DONE tasks")
                  (org-agenda-archives-mode t)))))))
 
-
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/todo.org" "/oc.org" "/projects.org" "/2020.org")))
+              '("/todo.org" "/oc.org" "/2020.org" "/projects.org")))
 
 (defvar reading-list-file "~/org/reading-list.org")
+(defvar reading-list-n-items 5)
 
 (defun update-reading-list-todo ()
   (with-current-buffer (find-file-noselect reading-list-file)
     (goto-char (org-find-exact-headline-in-buffer "Reading List"))
     (let ((currently-reading (apply '+ (org-map-entries (lambda () 1) "/NEXT"))))
-      (while (and (< currently-reading 2) (or (and (< (org-current-level) 2)
-                                                   (org-goto-first-child))
-                                              (org-get-next-sibling)))
+      (while (and (< currently-reading reading-list-n-items)
+                  (or (and (< (org-current-level) reading-list-n-items)
+                           (org-goto-first-child))
+                      (org-get-next-sibling)))
         (when (string= (org-get-todo-state) "TODO")
           (org-todo "NEXT")
           (setq currently-reading (+ currently-reading 1)))))
     (save-buffer)))
 
 (add-hook 'org-agenda-mode-hook 'update-reading-list-todo)
+(add-hook 'org-agenda-mode-hook 'org-super-agenda-mode)
 
 (defun counsel-find-org-file ()
   (interactive)
@@ -911,7 +923,7 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
     (server-start)))
 
 ;; config changes made through the customize UI will be stored here
-(setq custom-file (expand-file-name "custom.el" "~/.emacs.d"))
+(setq custom-file (expand-file-name "custom.el" "~/.config/emacs"))
 
 (when (file-exists-p custom-file)
   (load custom-file))
