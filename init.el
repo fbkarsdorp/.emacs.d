@@ -12,11 +12,15 @@
                           ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            ;; (font . "-*-Iosevka-light-normal-normal-*-14-*-*-*-m-0-iso10646-1")
-                            (height . 45) (width . 150)
-                            (inhibit-double-buffering . t)))
-(set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") nil 'prepend)
+                            (font . "-*-Fira Code-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            ;; (height . 61) (width . 186)
+                            (inhibit-double-buffering . t)
+			    ))
+(setq frame-inhibit-implied-resize t)
+(setq initial-major-mode 'fundamental-mode)
+(setq initial-scratch-message "")
 
+;; (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") nil 'prepend)
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 
@@ -37,7 +41,7 @@
 (scroll-bar-mode -1)
 (tooltip-mode -1)
 (fringe-mode 16) ;; I like a little more spacing
-;; (setq ns-use-proxy-icon nil)
+;; ;; (setq ns-use-proxy-icon nil)
 (setq frame-title-format "")
 (show-paren-mode t)
 (blink-cursor-mode -1)
@@ -63,8 +67,12 @@
 ;; Dired configurations
 (add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1)))
 ;; (setq dired-listing-switches "-Ahl  --group-directories-first")
-;; (setq dired-recursive-deletes 'always)
+(setq dired-recursive-deletes 'always)
 ;; (setq insert-directory-program "gls" dired-use-ls-dired t)
+
+(use-package dired-subtree
+  :after dired
+  :bind (:map dired-mode-map ("<tab>" . dired-subtree-toggle)))
 
 ;; use async where possible
 (use-package async
@@ -107,15 +115,6 @@
 (setq version-control t)
 (setq create-lockfiles nil)
 
-;; scrolling
-(setq scroll-preserve-screen-position t
-      scroll-margin 0
-      mac-redisplay-dont-reset-vscroll t
-      mac-mouse-wheel-smooth-scroll nil
-      mouse-wheel-scroll-amount '(1)
-      mouse-wheel-progressive-speed nil
-      scroll-conservatively 101)
-
 (defun new-scratch-pad ()
   "Create a new org-mode buffer for random stuff."
   (interactive)
@@ -153,6 +152,7 @@
 
 (use-package ox-latex
   :ensure nil
+  :defer t
   :config
   (add-to-list 'org-latex-packages-alist '("" "minted"))
   (setq org-latex-listings 'minted)
@@ -160,7 +160,16 @@
   (setq org-latex-pdf-process
         '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
           "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")))
+          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+
+  (add-to-list 'org-latex-classes
+             '("tufte-handout"
+               "\\documentclass{tufte-handout}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
 (use-package company-auctex
   :defer t)
@@ -182,29 +191,21 @@
   "Clear existing theme settings instead of layering them"
   (mapc #'disable-theme custom-enabled-themes))
 
-;; (use-package gruvbox-theme
-;;   :config (load-theme 'gruvbox-dark-soft t))
-
-(use-package doom-themes
-  :config (load-theme 'doom-gruvbox t))
-
-(use-package doom-modeline
-  :hook (after-init . doom-modeline-mode))
+(use-package gruvbox-theme
+  :config (load-theme 'gruvbox-dark-medium t))
 
 (use-package minions
   :config (minions-mode 1))
 
-(use-package rainbow-delimiters
-  :config (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
-
 (use-package company
   :config
-  (global-company-mode)
+  ;; (global-company-mode)
+  (add-hook 'prog-mode-hook 'company-mode)
   (setq company-global-modes '(not text-mode term-mode markdown-mode gfm-mode))
   (setq company-selection-wrap-around t
         company-show-numbers t
         company-tooltip-align-annotations t
-        company-idle-delay 0
+        company-idle-delay 0.5
         company-require-match nil
         company-minimum-prefix-length 2)
   ;; Bind next and previous selection to more intuitive keys
@@ -236,12 +237,14 @@
   :config
   (setq ess-eval-visibly 'nowait))
 
-(use-package stan-mode)
+(use-package stan-mode :defer t)
 
 (use-package company-stan
+  :after stan-mode
   :hook (stan-mode . company-stan-setup))
 
 (use-package eldoc-stan
+  :after stan-mode
   :hook (stan-mode . eldoc-stan-setup))
 
 (use-package yaml-mode
@@ -276,16 +279,6 @@
   :bind (("C-s" . 'swiper-isearch)
          ("C-r" . 'swiper-backward)
          ("C-c C-r" . 'ivy-resume)))
-
-;; (use-package ivy-posframe
-;;   :after ivy
-;;   :diminish
-;;   :config
-;;   (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-top-center))
-;;         ivy-posframe-height-alist '((t . 10))
-;;         ivy-posframe-parameters '((internal-border-width . 10)))
-;;   (setq ivy-posframe-width 88)
-;;   (ivy-posframe-mode +1))
 
 (use-package ivy-hydra
   :defer t)
@@ -340,12 +333,18 @@
   :bind*
   ("C-c C-r" . ivy-bibtex)
   :config
-  (setq bibtex-completion-bibliography "~/org/bibliography.bib")
+  (setq bibtex-completion-bibliography "~/org/bib.bib")
   (setq bibtex-completion-notes-path "~/org/reading-notes.org")
+  (setq bibtex-completion-pdf-field "File")
   (setq ivy-bibtex-default-action #'ivy-bibtex-insert-citation)
   (setq bibtex-completion-display-formats '((t . "${author:36} ${title:*} ${year:4} ${=type=:7}")))
-  (setf (alist-get 'org-mode bibtex-completion-format-citation-functions)
-        'bibtex-completion-format-citation-pandoc-citeproc))
+  (setq bibtex-completion-format-citation-functions
+        '((org-mode      . bibtex-completion-format-citation-org-title-link-to-PDF)
+          (latex-mode    . bibtex-completion-format-citation-cite)
+          (markdown-mode . bibtex-completion-format-citation-pandoc-citeproc)
+          (default       . bibtex-completion-format-citation-default))))
+  ;; (setf (alist-get 'org-mode bibtex-completion-format-citation-functions)
+        ;; 'bibtex-completion-format-citation-pandoc-citeproc))
 
 (defun counsel-bibtex-entry ()
   (interactive)
@@ -390,8 +389,8 @@
    '((move counsel-projectile-switch-project-action-dired 1)
      (setkey counsel-projectile-switch-project-action-dired "D"))))
                             
-;(use-package json-mode
-;  :mode "\\.json\\'")
+;; (use-package json-mode
+;;   :mode "\\.json\\'")
 
 (use-package elfeed
   :commands elfeed
@@ -466,24 +465,6 @@
 (use-package gitignore-templates
   :defer t)
 
-(use-package git-gutter-fringe
-  :config
-  (setq-default fringes-outside-margins t)
-  ;; thin fringe bitmaps
-  (fringe-helper-define 'git-gutter-fr:added '(center repeated)
-    "XXX.....")
-  (fringe-helper-define 'git-gutter-fr:modified '(center repeated)
-    "XXX.....")
-  (fringe-helper-define 'git-gutter-fr:deleted 'bottom
-    "X......."
-    "XX......"
-    "XXX....."
-    "XXXX....")
-  (add-hook 'prog-mode-hook #'git-gutter-mode)
-  (add-hook 'bibtex-mode-hook #'git-gutter-mode)
-  (add-hook 'conf-mode #'git-gutter-mode)
-  (add-hook 'LaTeX-mode #'git-gutter-mode))
-
 (use-package org-fancy-priorities
   :hook
   (org-mode . org-fancy-priorities-mode)
@@ -511,14 +492,6 @@
 (setq org-agenda-search-view-always-boolean t)
 (setq org-use-speed-commands t)
 (setq org-latex-create-formula-image-program 'dvisvgm)
-(add-to-list 'org-latex-classes
-             '("tufte-handout"
-               "\\documentclass{tufte-handout}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
 
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -532,9 +505,9 @@
 (dolist (template my-org-structure-template-alist)
   (add-to-list 'org-structure-template-alist template))
 
-(use-package org-tempo
-  :ensure nil
-  :after org)
+;; (use-package org-tempo
+;;   :ensure nil
+;;   :after org)
 
 (setq org-confirm-babel-evaluate nil)
 (setq org-enforce-todo-dependencies t)
@@ -675,8 +648,7 @@
            (todo "NEXT"
                  ((org-agenda-overriding-header "  Reading List")
                   (org-agenda-prefix-format " %?(org-deadline-ahead)")
-                  (org-agenda-files '("~/org/reading-list.org"))))
-           (todo "DONE|CANCELLED" ((org-agenda-overriding-header "  Tasks to Archive")))))
+                  (org-agenda-files '("~/org/reading-list.org"))))))
 
         ("w" "Weekly review"
          ((tags (format-closed-query)
@@ -716,24 +688,6 @@
               :caller 'counsel-find-org-file)))
 
 (define-key global-map "\C-co" 'counsel-find-org-file)
-
-(use-package org-journal
-  :defer t
-  :init
-  (setq org-journal-dir "~/journal/")
-  (setq org-journal-date-format "#+TITLE: Journal Entry- %e %b %Y (%A)"))
-
-(defun get-journal-file-today ()
-  "Return filename for today's journal entry."
-  (let ((daily-name (format-time-string "%Y%m%d")))
-    (expand-file-name (concat org-journal-dir daily-name))))
-
-(defun journal-file-today ()
-  "Create and load a journal file based on today's date."
-  (interactive)
-  (find-file (get-journal-file-today)))
-
-(global-set-key (kbd "C-c j") 'journal-file-today)
 
 ;; org-projectile for project bases org projects.
 (defvar project-todos "projects.org")
@@ -923,7 +877,7 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
     (server-start)))
 
 ;; config changes made through the customize UI will be stored here
-(setq custom-file (expand-file-name "custom.el" "~/.config/emacs"))
+(setq custom-file (expand-file-name "custom.el" "~/.emacs.d"))
 
 (when (file-exists-p custom-file)
   (load custom-file))

@@ -3,6 +3,8 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ansi-color-faces-vector
+   [default default default italic underline success warning error])
  '(doc-view-ghostscript-program "gs")
  '(doc-view-pdfdraw-program "mudraw")
  '(doc-view-resolution 300)
@@ -11,24 +13,18 @@
  '(emojify-display-style 'unicode)
  '(jupyter-repl-prompt-margin-width 1)
  '(magit-diff-use-overlays nil)
- '(org-agenda-prefix-format
-   '((agenda . "%-20c %-8(org-deadline-ahead)")
-     (todo . "%-20c %-8(org-deadline-ahead)")
-     (tags . "%-20c %-8(org-deadline-ahead)")
-     (search . "%-20c %-8(org-deadline-ahead)")))
+ '(org-agenda-files
+   '("~/projects/nnfit/nnfit.org" "~/local/comphum/comphum.org" "~/projects/manuscripts/manuscripts.org" "~/projects/song-complexity/innovation.org" "~/projects/book/hda.org" "~/projects/whispers/whispers.org" "~/projects/exaptation/exaptation.org" "~/projects/abm/abm.org" "~/projects/contrafactum/contrafactum.org" "~/projects/patrology/patrology.org" "~/org/todo.org" "~/org/oc.org" "~/org/2020.org" "~/org/projects.org"))
  '(package-selected-packages
-   '(doom-modeline ivy-posframe flx night-owl-theme night-owl-emacs counsel-tramp vterm org counsel-notmuch visual-fill-column ox-latex elfeed all-the-icons jupyter solarized-theme gitignore-templates wgrep yaml-mode which-key visual-regexp-steroids smex smartparens seoul256-theme request rainbow-delimiters paradox ox-pandoc org-projectile org-journal org-fancy-priorities org-cliplink multiple-cursors move-text minions langtool ivy-hydra ivy-bibtex iflipb gruvbox-theme git-gutter-fringe flyspell-correct-ivy exec-path-from-shell esup ess elpy doom-themes diminish deadgrep counsel-projectile company-statistics blacken auctex-latexmk ace-window use-package))
+   '(dired-subtree doom-modeline counsel-tramp vterm org counsel-notmuch visual-fill-column ox-latex elfeed all-the-icons jupyter solarized-theme gitignore-templates wgrep yaml-mode which-key visual-regexp-steroids smex smartparens seoul256-theme request rainbow-delimiters paradox ox-pandoc org-projectile org-fancy-priorities org-cliplink multiple-cursors move-text minions langtool ivy-hydra ivy-bibtex iflipb gruvbox-theme flyspell-correct-ivy exec-path-from-shell esup ess elpy doom-themes diminish deadgrep counsel-projectile company-statistics blacken auctex-latexmk ace-window use-package))
  '(paradox-github-token t)
- '(tramp-default-user "folgert"))
+ '(tramp-default-user "folgert" t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(deadgrep-match-face ((t (:inherit font-lock-function-name-face))))
- '(git-gutter:added ((t (:background nil))))
- '(git-gutter:deleted ((t (:background nil))))
- '(git-gutter:modified ((t :background nil)))
  '(hl-line ((t (:extend t))))
  '(jupyter-repl-input-prompt ((t (:foreground "#928374"))))
  '(jupyter-repl-output-prompt ((t (:foreground "#cc241d"))))
