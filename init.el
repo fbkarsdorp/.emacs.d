@@ -1,6 +1,6 @@
 ;;; -*- lexical-binding: t -*-
 ;;; init.el --- This is where all emacs start.
-
+(setq comp-speed 2)
 (setq gc-cons-threshold 100000000) 
 (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
 
@@ -12,7 +12,7 @@
                           ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Fira Code-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Office Code Pro-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
                             ;; (height . 61) (width . 186)
                             (inhibit-double-buffering . t)
 			    ))
@@ -46,6 +46,7 @@
 (show-paren-mode t)
 (blink-cursor-mode -1)
 (save-place-mode 1)
+(setq sentence-end-double-space nil)
 
 (use-package hl-line
   :ensure nil
@@ -63,6 +64,11 @@
 (setq tab-width 4)
 (setq-default fill-column 90)
 (prefer-coding-system 'utf-8)
+
+(defun xah-unfill-paragraph ()
+  (interactive)
+  (let ((fill-column most-positive-fixnum))
+    (fill-paragraph)))
 
 ;; Dired configurations
 (add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1)))
@@ -144,7 +150,16 @@
           TeX-parse-self t
           TeX-PDF-mode 1
           ;; Don't insert line-break at inline math
-          LaTeX-fill-break-at-separators nil)
+          LaTeX-fill-break-at-separators nil
+          TeX-view-program-list
+          '(("Preview.app" "open -a Preview.app %o")
+            ("Skim" "open -a Skim.app %o")
+            ("displayline" "displayline -g -b %n %o %b")
+            ("open" "open %o"))
+          TeX-view-program-selection
+          '((output-dvi "open")
+            (output-pdf "Skim")
+            (output-html "open")))
     (add-hook 'TeX-mode-hook #'turn-on-reftex))
   :config
   (bind-key "C-c h l" 'hydra-langtool/body TeX-mode-map)
@@ -171,6 +186,12 @@
                ("\\paragraph{%s}" . "\\paragraph*{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
+(use-package csv-mode
+  :defer t)
+
+(use-package expand-region
+  :bind ("C-=" . er/expand-region))
+
 (use-package company-auctex
   :defer t)
 
@@ -191,8 +212,8 @@
   "Clear existing theme settings instead of layering them"
   (mapc #'disable-theme custom-enabled-themes))
 
-(use-package gruvbox-theme
-  :config (load-theme 'gruvbox-dark-medium t))
+(use-package zenburn-theme
+  :config (load-theme 'zenburn t))
 
 (use-package minions
   :config (minions-mode 1))
@@ -211,7 +232,7 @@
   ;; Bind next and previous selection to more intuitive keys
   (define-key company-active-map (kbd "C-n") 'company-select-next)
   (define-key company-active-map (kbd "C-p") 'company-select-previous)
-  (add-to-list 'company-frontends 'company-tng-frontend)
+  ;; (add-to-list 'company-frontends 'company-tng-frontend)
   :bind (("TAB" . 'company-indent-or-complete-common)))
 
 (use-package elpy
@@ -310,6 +331,85 @@
   (setq counsel-find-file-occur-cmd
         "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
+
+
+(use-package rust-mode
+  :bind ( :map rust-mode-map
+               (("C-c C-t" . racer-describe)
+                ([?\t] .  company-indent-or-complete-common)))
+  :config
+  (progn
+    ;; add flycheck support for rust (reads in cargo stuff)
+    ;; https://github.com/flycheck/flycheck-rust
+    (use-package flycheck-rust)
+
+    ;; cargo-mode for all the cargo related operations
+    ;; https://github.com/kwrooijen/cargo.el
+    (use-package cargo
+      :hook (rust-mode . cargo-minor-mode)
+      :bind
+      ("C-c C-c C-n" . cargo-process-new)) ;; global binding
+
+    ;;; racer-mode for getting IDE like features for rust-mode
+    ;; https://github.com/racer-rust/emacs-racer
+    (use-package racer
+      :hook (rust-mode . racer-mode)
+      :config
+      (progn
+        ;; package does this by default ;; set racer rust source path environment variable
+        ;; (setq racer-rust-src-path (getenv "RUST_SRC_PATH"))
+        (defun my-racer-mode-hook ()
+          (set (make-local-variable 'company-backends)
+               '((company-capf company-files)))
+          (setq company-minimum-prefix-length 1)
+          (setq indent-tabs-mode nil))
+
+        (add-hook 'racer-mode-hook 'my-racer-mode-hook)
+
+        ;; enable company and eldoc minor modes in rust-mode (racer-mode)
+        (add-hook 'racer-mode-hook #'company-mode)
+        (add-hook 'racer-mode-hook #'eldoc-mode)))
+
+    (add-hook 'rust-mode-hook 'flycheck-mode)
+    (add-hook 'flycheck-mode-hook 'flycheck-rust-setup)
+
+    ;; format rust buffers on save using rustfmt
+    (add-hook 'before-save-hook
+              (lambda ()
+                (when (eq major-mode 'rust-mode)
+                  (rust-format-buffer))))))
+
+;; (add-to-list 'auto-mode-alist '("\\.sbclrc$" . lisp-mode))
+
+;; ;; Use SLIME from Quicklisp
+;; (defun load-common-lisp-slime ()
+;;   (interactive)
+;;   ;; Common Lisp support depends on SLIME being installed with Quicklisp
+;;   (if (file-exists-p (expand-file-name "~/quicklisp/slime-helper.el"))
+;;       (load (expand-file-name "~/quicklisp/slime-helper.el"))
+;;     (message "%s" "SLIME is not installed. Use Quicklisp to install it.")))
+
+;; ;; start slime automatically when we open a lisp file
+;; (defun start-slime ()
+;;   (unless (slime-connected-p)
+;;     (save-excursion (slime))))
+
+;; (add-hook 'slime-mode-hook 'start-slime)
+
+;; (use-package slime
+;;   :ensure nil
+;;   :defer t
+;;   :commands (slime slime-lisp-mode-hook slime-mode)
+;;   :init (load-common-lisp-slime)
+;;   :config
+;;   (setq inferior-lisp-program "sbcl"
+;;         slime-net-coding-system 'utf-8-unix
+;;         slime-complete-symbol*-fancy t
+;;         slime-complete-symbol-function 'slime-fuzzy-complete-symbol
+;;         slime-default-lisp 'sbcl
+;;         slime-fuzzy-completion-in-place t
+;;         slime-enable-evaluate-in-emacs t
+;;         slime-autodoc-use-multiline-p t))
 
 (use-package wgrep :defer t)
 
@@ -461,6 +561,8 @@
   :after magit
   :config
   (setq ghub-use-workaround-for-emacs-bug 'force))
+
+(use-package vterm)
 
 (use-package gitignore-templates
   :defer t)
@@ -616,8 +718,15 @@
 (defun format-closed-query ()
   (format "+TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" (read-string "Number of days: ")))
 
-(setq org-agenda-block-separator ?\u2015
-      org-super-agenda-header-separator (concat "\n" (make-string 123 ?\u2500) "\n")
+(use-package org-super-agenda)
+
+(use-package org-pomodoro
+  :after 'org)
+
+(setq org-agenda-block-separator (propertize
+                                  (concat (make-string 123 ?\u2594))
+                                  'face '(:foreground "grey38"))
+      org-super-agenda-header-separator "\n"
       org-agenda-restore-windows-after-quit t
       ;; org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
@@ -634,8 +743,17 @@
         (?C . (font-lock-variable-name-face :weight bold)))
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
-          ((todo "TODO|NEXT|WAITING"
-                 ((org-agenda-overriding-header nil)
+         ((agenda ""
+                  (;(org-agenda-block-separator block-separator)
+                   (org-agenda-overriding-header " Today's tasks")
+                   (org-agenda-span 'day)
+                   (org-agenda-format-date "")
+                   (org-agenda-prefix-format '((agenda . "  %?-12t")))
+                   (org-super-agenda-groups
+                    '((:name "Today" :time-grid t :scheduled today :todo ("TODO" "NEXT"))
+                      (:discard (:anything t))))))
+          (todo "TODO|NEXT|WAITING"
+                 ((org-agenda-overriding-header " Project Backlog")
                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                   (org-super-agenda-groups
                    '((:auto-map (lambda (item)
@@ -644,10 +762,10 @@
                                    (file-path (->> marker marker-buffer buffer-file-name))
                                    (directory-name (->> file-path file-name-directory
                                                         directory-file-name file-name-nondirectory)))
-                        (concat " " (upcase-initials directory-name) "\n"))))))))
+                        (concat " " (upcase-initials directory-name) "\n"))))))))
            (todo "NEXT"
-                 ((org-agenda-overriding-header "  Reading List")
-                  (org-agenda-prefix-format " %?(org-deadline-ahead)")
+                 ((org-agenda-overriding-header " Reading List")
+                  (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                   (org-agenda-files '("~/org/reading-list.org"))))))
 
         ("w" "Weekly review"
@@ -687,7 +805,7 @@
               :action (lambda (f) (find-file (concat org-directory "/" f)))
               :caller 'counsel-find-org-file)))
 
-(define-key global-map "\C-co" 'counsel-find-org-file)
+(define-key global-map "\C-cy" 'counsel-find-org-file)
 
 ;; org-projectile for project bases org projects.
 (defvar project-todos "projects.org")
@@ -706,6 +824,8 @@
 
 (add-hook 'org-capture-mode-hook 'delete-other-windows)
 (add-hook 'org-capture-after-finalize-hook 'org-projectile-cleanup)
+
+(use-package fontawesome)
 
 (use-package org-projectile
   :after org
@@ -819,6 +939,19 @@ _<f12>_ quit hydra
 
 (define-key dired-mode-map (kbd "<f12>") 'hydra-dired/body)
 
+(use-package org-roam
+  :hook
+  (after-init . org-roam-mode)
+  :custom
+  (org-roam-directory "~/notes/")
+  :bind (:map org-roam-mode-map
+              (("C-c o l" . org-roam)
+               ("C-c o f" . org-roam-find-file)
+               ("C-c o g" . org-roam-graph))
+         :map org-mode-map
+              (("C-c o i" . org-roam-insert))
+              (("C-c o I" . org-roam-insert-immediate))))
+
 (use-package iflipb
   :bind*
   (("M-}" . iflipb-next-buffer)
@@ -881,3 +1014,4 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 
 (when (file-exists-p custom-file)
   (load custom-file))
+(put 'narrow-to-region 'disabled nil)
