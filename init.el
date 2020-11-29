@@ -791,7 +791,7 @@
     (goto-char (org-find-exact-headline-in-buffer "Reading List"))
     (let ((currently-reading (apply '+ (org-map-entries (lambda () 1) "/NEXT"))))
       (while (and (< currently-reading reading-list-n-items)
-                  (or (and (< (org-current-level) reading-list-n-items)
+                  (or (and (= (org-current-level) 1)
                            (org-goto-first-child))
                       (org-get-next-sibling)))
         (when (string= (org-get-todo-state) "TODO")
