@@ -733,6 +733,7 @@
                                   (concat (make-string 123 ?\u2594))
                                   'face '(:foreground "grey38"))
       org-super-agenda-header-separator "\n"
+      org-habit-show-habits-only-for-today nil
       org-agenda-restore-windows-after-quit t
       ;; org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
