@@ -751,15 +751,12 @@
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
          ((agenda ""
-                  (;(org-agenda-block-separator block-separator)
-                   (org-agenda-overriding-header " Today's tasks")
-                   (org-agenda-span 'day)
-                   (org-agenda-format-date "")
-                   (org-agenda-prefix-format '((agenda . "  %?-12t")))
+                  ((org-agenda-overriding-header " Week Planner\n")
+                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                    (org-super-agenda-groups
-                    '((:name "Today" :time-grid t :scheduled today :todo ("TODO" "NEXT"))
+                    '((:name "" :time-grid t :scheduled t)
                       (:discard (:anything t))))))
-          (todo "TODO|NEXT|WAITING"
+          (todo "TODO|NEXT|WAITING|HOLD"
                  ((org-agenda-overriding-header " Project Backlog")
                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                   (org-super-agenda-groups
@@ -769,9 +766,11 @@
                                    (file-path (->> marker marker-buffer buffer-file-name))
                                    (directory-name (->> file-path file-name-directory
                                                         directory-file-name file-name-nondirectory)))
-                        (concat " " (upcase-initials directory-name) "\n"))))))))
+                        (unless (string-equal (file-name-base buffer-file-name) "habits")
+                          (concat " " (upcase-initials directory-name) "\n")))))
+                     (:discard (:anything t))))))
            (todo "NEXT"
-                 ((org-agenda-overriding-header " Reading List")
+                 ((org-agenda-overriding-header " Reading List\n")
                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                   (org-agenda-files '("~/org/reading-list.org"))))))
 
