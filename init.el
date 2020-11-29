@@ -12,7 +12,7 @@
                           ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Office Code Pro-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Office Code Pro-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
                             ;; (height . 61) (width . 186)
                             (inhibit-double-buffering . t)
 			    ))
