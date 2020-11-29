@@ -720,7 +720,11 @@
 (defun format-closed-query ()
   (format "+TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" (read-string "Number of days: ")))
 
-(use-package org-super-agenda)
+(use-package org-super-agenda
+  :config
+  (use-package origami
+    :bind (:map org-super-agenda-header-map ("C-<tab>" . origami-toggle-node))
+    :hook (org-agenda-mode . origami-mode)))
 
 (use-package org-pomodoro
   :after 'org)
