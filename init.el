@@ -585,7 +585,7 @@
         (setf (alist-get item ivy-initial-inputs-alist) ""))
       '(org-refile org-agenda-refile org-capture-refile))
 
-(setq org-todo-keywords '((sequence "TODO" "NEXT" "WAITING" "|" "DONE" "CANCELLED")))
+(setq org-todo-keywords '((sequence "TODO" "NEXT" "WAITING" "|" "DONE" "CANCELLED" "HOLD")))
 (setq org-refile-use-outline-path 'file)
 (setq org-outline-path-complete-in-steps nil)
 (setq org-refile-allow-creating-parent-nodes 'confirm)
