@@ -212,8 +212,10 @@
   "Clear existing theme settings instead of layering them"
   (mapc #'disable-theme custom-enabled-themes))
 
-(use-package zenburn-theme
-  :config (load-theme 'zenburn t))
+(use-package doom-themes
+  :config
+  (load-theme 'doom-one t)
+  (doom-themes-org-config))
 
 (use-package minions
   :config (minions-mode 1))
