@@ -1,6 +1,5 @@
 ;;; -*- lexical-binding: t -*-
 ;;; init.el --- This is where all emacs start.
-(setq comp-speed 2)
 (setq gc-cons-threshold 100000000) 
 (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
 
@@ -9,10 +8,11 @@
 (setq package-archives (append
 			package-archives
 			'(("melpa" . "https://melpa.org/packages/")
-                          ("elpy" . "http://jorgenschaefer.github.io/packages/"))))
+                          ("elpy" . "http://jorgenschaefer.github.io/packages/")
+                          ("org" . "https://orgmode.org/elpa/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Office Code Pro-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Source Code Pro-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
                             ;; (height . 61) (width . 186)
                             (inhibit-double-buffering . t)
 			    ))
@@ -22,6 +22,7 @@
 
 ;; (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") nil 'prepend)
 (when (memq window-system '(mac ns x))
+  (setq exec-path-from-shell-arguments nil)
   (exec-path-from-shell-initialize))
 
 (customize-set-variable 'tramp-default-user "folgert")
@@ -321,7 +322,7 @@
          ("C-c i" . 'counsel-imenu)
          ("C-c l" . 'counsel-locate)
          ("C-c c" . 'counsel-org-capture)
-         ("C-x b" . 'ivy-switch-buffer))
+         ("C-x b" . 'counsel-switch-buffer))
   :config
   (setq counsel-git-cmd "rg --files")
   (setq counsel-grep-base-command "grep -niE %s %s")
@@ -431,6 +432,9 @@
 (defun ivy-bibtex-format-pandoc-citation (keys)
   (concat "[" (mapconcat (lambda (key) (concat "@" key)) keys "; ") "]"))
 
+(defun bibtex-pdf-open-function (fpath)
+  (call-process "open" nil 0 nil "-a" "/Applications/Skim.app" fpath))
+
 (use-package ivy-bibtex
   :bind*
   ("C-c C-r" . ivy-bibtex)
@@ -438,6 +442,7 @@
   (setq bibtex-completion-bibliography "~/org/bib.bib")
   (setq bibtex-completion-notes-path "~/org/reading-notes.org")
   (setq bibtex-completion-pdf-field "File")
+  (setq bibtex-completion-pdf-open-function 'bibtex-pdf-open-function)
   (setq ivy-bibtex-default-action #'ivy-bibtex-insert-citation)
   (setq bibtex-completion-display-formats '((t . "${author:36} ${title:*} ${year:4} ${=type=:7}")))
   (setq bibtex-completion-format-citation-functions
@@ -490,7 +495,10 @@
    'counsel-projectile-switch-project-action
    '((move counsel-projectile-switch-project-action-dired 1)
      (setkey counsel-projectile-switch-project-action-dired "D"))))
-                            
+
+(use-package perspective
+  :config
+  (persp-mode))
 ;; (use-package json-mode
 ;;   :mode "\\.json\\'")
 
@@ -590,7 +598,6 @@
 (setq org-outline-path-complete-in-steps nil)
 (setq org-refile-allow-creating-parent-nodes 'confirm)
 (setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
-(setq org-agenda-show-future-repeats nil)
 (setq org-src-fontify-natively t)
 (setq org-hide-leading-stars t)
 (setq org-agenda-search-view-always-boolean t)
@@ -715,6 +722,9 @@
          :empty-lines 1)
         ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
          "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         :empty-lines 1)
+        ("m" "Mail" entry (file+headline "~/org/todo.org" "Mail")
+         "* %(org-mac-message-get-links \"s\") %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)))
 
 (defun format-closed-query ()
@@ -735,6 +745,10 @@
       org-super-agenda-header-separator "\n"
       org-habit-show-habits-only-for-today nil
       org-agenda-restore-windows-after-quit t
+      org-agenda-show-future-repeats nil
+      org-agenda-skip-deadline-prewarning-if-scheduled t
+      org-agenda-skip-scheduled-if-done t
+      org-agenda-skip-deadline-if-done t
       ;; org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
       ;; Was needed with a recent update of org. Reverted back to 9.2 for now.
@@ -801,6 +815,8 @@
 
 (add-hook 'org-agenda-mode-hook 'update-reading-list-todo)
 (add-hook 'org-agenda-mode-hook 'org-super-agenda-mode)
+(add-hook 'org-mode-hook (lambda ()
+  (define-key org-mode-map (kbd "C-c g") 'org-mac-grab-link)))
 
 (defun counsel-find-org-file ()
   (interactive)
@@ -831,6 +847,14 @@
 (add-hook 'org-capture-mode-hook 'delete-other-windows)
 (add-hook 'org-capture-after-finalize-hook 'org-projectile-cleanup)
 
+(org-add-link-type "message" 'org-mac-message-open)
+
+(defun org-mac-message-open (message-id)
+  "Visit the message with MESSAGE-ID.
+   This will use the command `open' with the message URL."
+  (message "%s" message-id)
+  (browse-url (concat "message://%3c" (substring message-id 2) "%3e")))
+
 (use-package fontawesome)
 
 (use-package org-projectile
@@ -844,6 +868,15 @@
           "* TODO %^{Todo} \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?")
     (push (org-projectile-project-todo-entry :empty-lines 1) org-capture-templates))
   :bind (("C-c n" . org-projectile-project-todo-completing-read)))
+
+
+(use-package zotxt
+  :after org
+  :defer t
+  :config
+  :hook (org-mode-hook . (lambda () (org-zotxt-mode 1)))
+  :bind (("C-c o r" . (lambda () (interactive)
+                        (org-zotxt-insert-reference-link '(4))))))
 
 ;; Hydra for org agenda (graciously taken from Spacemacs)
 (defhydra hydra-org-agenda (:pre (setq which-key-inhibit t)
