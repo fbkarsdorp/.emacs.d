@@ -8,6 +8,7 @@
  '(column-number-mode t)
  '(company-quickhelp-color-background "#4F4F4F")
  '(company-quickhelp-color-foreground "#DCDCCC")
+ '(cursor-type 'hbar)
  '(custom-safe-themes
    '("e1d09f1b2afc2fed6feb1d672be5ec6ae61f84e058cb757689edb669be926896" "a06658a45f043cd95549d6845454ad1c1d6e24a99271676ae56157619952394a" "c0a0c2f40c110b5b212eb4f2dad6ac9cac07eb70380631151fa75556b0100063" "76bfa9318742342233d8b0b42e824130b3a50dcc732866ff8e47366aed69de11" default))
  '(doc-view-ghostscript-program "gs")
@@ -27,9 +28,16 @@
    '("#CC9393" "#DFAF8F" "#F0DFAF" "#7F9F7F" "#BFEBBF" "#93E0E3" "#94BFF3" "#DC8CC3"))
  '(ns-alternate-modifier 'none)
  '(org-agenda-files
-   '("~/projects/rekencluster/cluster.org" "~/org/habits.org" "~/projects/tsinfer/tsinfer.org" "~/OC/oc.org" "~/projects/song-complexity/innovation.org" "~/projects/book/hda.org" "~/projects/whispers/whispers.org" "~/projects/contrafactum/contrafactum.org" "~/org/todo.org" "~/org/oc.org" "~/org/2020.org" "~/org/projects.org"))
+   '("~/org/agenda.org" "~/org/inbox.org" "~/org/oc.org" "~/org/projects.org" "~/org/habits.org"))
+ '(org-agenda-time-grid
+   '((daily today require-timed)
+     (800 1000 1200 1400 1600 1800)
+     "......" "----------------"))
  '(org-modules
    '(ol-bbdb ol-bibtex ol-docview ol-eww ol-gnus ol-info ol-irc ol-mhe ol-rmail ol-w3m org-mac-link))
+ '(org-super-agenda-header-prefix "")
+ '(org-super-agenda-header-separator "
+")
  '(package-selected-packages
    '(org-plus-contrib grab-mac-link with-editor zotxt perspective gruvbox origami fontawesome org-roam python tron-legacy-theme zenburn-theme vterm ayu-theme racer cargo flycheck-rust paredit org-super-agenda expand-region rust-mode csv-mode dired-subtree doom-modeline counsel-tramp org counsel-notmuch visual-fill-column ox-latex elfeed all-the-icons jupyter solarized-theme gitignore-templates wgrep yaml-mode which-key visual-regexp-steroids smex smartparens seoul256-theme request rainbow-delimiters paradox ox-pandoc org-projectile org-fancy-priorities org-cliplink multiple-cursors move-text minions langtool ivy-hydra ivy-bibtex iflipb gruvbox-theme flyspell-correct-ivy exec-path-from-shell esup ess elpy doom-themes diminish deadgrep counsel-projectile company-statistics blacken auctex-latexmk ace-window use-package))
  '(paradox-github-token t)
@@ -43,5 +51,6 @@
  '(hl-line ((t (:extend t))))
  '(jupyter-repl-input-prompt ((t (:foreground "#928374"))))
  '(jupyter-repl-output-prompt ((t (:foreground "#cc241d"))))
+ '(org-agenda-structure ((t (:inherit default :height 1.5))))
  '(org-super-agenda-header ((t (:inherit default :height 1.25)))))
 (put 'downcase-region 'disabled nil)

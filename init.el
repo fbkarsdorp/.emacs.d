@@ -12,7 +12,7 @@
                           ("org" . "https://orgmode.org/elpa/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Source Code Pro-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Source Code Pro-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
                             ;; (height . 61) (width . 186)
                             (inhibit-double-buffering . t)
 			    ))
@@ -25,7 +25,7 @@
   (setq exec-path-from-shell-arguments nil)
   (exec-path-from-shell-initialize))
 
-(customize-set-variable 'tramp-default-user "folgert")
+(customize-set-variable 'tramp-default-user "folgertk")
 (setenv "LANG" "en_US.UTF-8")
 
 (eval-when-compile
@@ -215,8 +215,8 @@
 
 (use-package doom-themes
   :config
-  (load-theme 'doom-one t)
-  (doom-themes-org-config))
+  (setq doom-monokai-pro-padded-modeline t)
+  (load-theme 'doom-monokai-pro t))
 
 (use-package minions
   :config (minions-mode 1))
@@ -597,7 +597,11 @@
 (setq org-refile-use-outline-path 'file)
 (setq org-outline-path-complete-in-steps nil)
 (setq org-refile-allow-creating-parent-nodes 'confirm)
-(setq org-refile-targets '((org-agenda-files :maxlevel . 1)))
+(setq org-refile-targets '((org-agenda-files :maxlevel . 2)))
+(setq org-refile-targets
+      '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")))
+(setq org-refile-use-outline-path 'file)
+(setq org-outline-path-complete-in-steps nil)
 (setq org-src-fontify-natively t)
 (setq org-hide-leading-stars t)
 (setq org-agenda-search-view-always-boolean t)
@@ -705,25 +709,22 @@
       (message "Org speed commands turned on."))))
 
 (setq org-capture-templates
-      '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
+      '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Tasks")
          "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
-        ("i" "Idee" entry (file+olp+datetree "~/org/ideas.org")
-         "* Idee: %^{Title} %^g\n\n  %?"
-         :empty-lines 1)
-        ("Q" "Quote" entry (file+headline "~/org/quotes.org" "Quotes")
-         "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n  %?"
+        ("m" "Meeting" entry (file+headline "~/org/agenda.org" "Toekomstig")
+         "* %^{Description} :meeting:\nSCHEDULED: %^t"
          :empty-lines 1)
         ("r" "Read" entry (file+headline "~/org/reading-list.org" "Reading List")
          "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
-        ("n" "Note" entry (file+headline "~/org/todo.org" "Notes")
+        ("n" "Note" entry (file+headline "~/org/inbox.org" "Notes")
          "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
         ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
          "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
-        ("m" "Mail" entry (file+headline "~/org/todo.org" "Mail")
+        ("e" "Mail" entry (file+headline "~/org/inbox.org" "Mail")
          "* %(org-mac-message-get-links \"s\") %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)))
 
@@ -746,6 +747,7 @@
       org-habit-show-habits-only-for-today nil
       org-agenda-restore-windows-after-quit t
       org-agenda-show-future-repeats nil
+      org-agenda-span 'day
       org-agenda-skip-deadline-prewarning-if-scheduled t
       org-agenda-skip-scheduled-if-done t
       org-agenda-skip-deadline-if-done t
@@ -765,28 +767,28 @@
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
          ((agenda ""
-                  ((org-agenda-overriding-header " Week Planner\n")
-                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
+                  ((org-agenda-overriding-header " Day Planner\n")
+                   (org-agenda-prefix-format '((agenda . " %?-12t% s")))
                    (org-super-agenda-groups
                     '((:name "" :time-grid t :scheduled t)
                       (:discard (:anything t))))))
           (todo "TODO|NEXT|WAITING|HOLD"
-                 ((org-agenda-overriding-header " Project Backlog")
+                ((org-agenda-overriding-header " Inbox\n")
+                 (org-agenda-prefix-format " %?(org-deadline-ahead) ")
+                 (org-agenda-files '("~/org/inbox.org"))))
+          (todo "TODO|NEXT|WAITING|HOLD"
+                 ((org-agenda-overriding-header " Project TODOs")
                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                   (org-super-agenda-groups
                    '((:auto-map (lambda (item)
-                      (-when-let* ((marker (or (get-text-property 0 'org-marker item)
-                                               (get-text-property 0 'org-hd-marker item)))
-                                   (file-path (->> marker marker-buffer buffer-file-name))
-                                   (directory-name (->> file-path file-name-directory
-                                                        directory-file-name file-name-nondirectory)))
-                        (unless (string-equal (file-name-base buffer-file-name) "habits")
-                          (concat " " (upcase-initials directory-name) "\n")))))
+                       (unless (or (string-equal (file-name-base buffer-file-name) "habits")
+                                   (string-equal (file-name-base buffer-file-name) "inbox"))
+                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n"))))
                      (:discard (:anything t))))))
-           (todo "NEXT"
-                 ((org-agenda-overriding-header " Reading List\n")
-                  (org-agenda-prefix-format " %?(org-deadline-ahead) ")
-                  (org-agenda-files '("~/org/reading-list.org"))))))
+          (todo "NEXT"
+                ((org-agenda-overriding-header " Reading List\n")
+                 (org-agenda-prefix-format " %?(org-deadline-ahead) ")
+                 (org-agenda-files '("~/org/reading-list.org"))))))
 
         ("w" "Weekly review"
          ((tags (format-closed-query)
@@ -795,7 +797,7 @@
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/todo.org" "/oc.org" "/2020.org" "/projects.org")))
+              '("/inbox.org" "/oc.org" "/projects.org" "/habits.org")))
 
 (defvar reading-list-file "~/org/reading-list.org")
 (defvar reading-list-n-items 5)
