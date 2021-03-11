@@ -12,9 +12,9 @@
                           ("org" . "https://orgmode.org/elpa/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "-*-Source Code Pro-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (font . "Roboto Mono:style=Light:size=12")
                             ;; (height . 61) (width . 186)
-                            (inhibit-double-buffering . t)
+                            ;; (inhibit-double-buffering . t)
 			    ))
 (setq frame-inhibit-implied-resize t)
 (setq initial-major-mode 'fundamental-mode)
@@ -217,6 +217,15 @@
   :config
   (setq doom-monokai-pro-padded-modeline t)
   (load-theme 'doom-monokai-pro t))
+
+(defvar my-selected-themes '((light . doom-flatwhite) (dark . doom-monokai-pro)))
+(defvar current-theme-type 'light)
+(defun toggle-themes ()
+  (interactive)
+  (if (eq current-theme-type 'light)
+      (setq current-theme-type 'dark)
+    (setq current-theme-type 'light))
+  (load-theme (cdr (assoc current-theme-type my-selected-themes)) t))
 
 (use-package minions
   :config (minions-mode 1))
@@ -713,7 +722,7 @@
          "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
         ("m" "Meeting" entry (file+headline "~/org/agenda.org" "Toekomstig")
-         "* %^{Description} :meeting:\nSCHEDULED: %^t"
+         "* %^{Description} :meeting:\n  %^t"
          :empty-lines 1)
         ("r" "Read" entry (file+headline "~/org/reading-list.org" "Reading List")
          "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
@@ -725,7 +734,7 @@
          "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
         ("e" "Mail" entry (file+headline "~/org/inbox.org" "Mail")
-         "* %(org-mac-message-get-links \"s\") %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         "* TODO  %(org-mac-message-get-links \"s\") %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)))
 
 (defun format-closed-query ()
@@ -734,7 +743,7 @@
 (use-package org-super-agenda
   :config
   (use-package origami
-    :bind (:map org-super-agenda-header-map ("C-<tab>" . origami-toggle-node))
+    :bind (:map org-super-agenda-header-map ("<tab>" . origami-toggle-node))
     :hook (org-agenda-mode . origami-mode)))
 
 (use-package org-pomodoro
@@ -770,7 +779,7 @@
                   ((org-agenda-overriding-header " Day Planner\n")
                    (org-agenda-prefix-format '((agenda . " %?-12t% s")))
                    (org-super-agenda-groups
-                    '((:name "" :time-grid t :scheduled t)
+                    '((:name "" :time-grid t :scheduled t :deadline t :category "verjaardag")
                       (:discard (:anything t))))))
           (todo "TODO|NEXT|WAITING|HOLD"
                 ((org-agenda-overriding-header " Inbox\n")
@@ -779,11 +788,10 @@
           (todo "TODO|NEXT|WAITING|HOLD"
                  ((org-agenda-overriding-header " Project TODOs")
                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
+                  (org-agenda-files '("~/org/projects.org"))
                   (org-super-agenda-groups
                    '((:auto-map (lambda (item)
-                       (unless (or (string-equal (file-name-base buffer-file-name) "habits")
-                                   (string-equal (file-name-base buffer-file-name) "inbox"))
-                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n"))))
+                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n")))
                      (:discard (:anything t))))))
           (todo "NEXT"
                 ((org-agenda-overriding-header " Reading List\n")
@@ -797,7 +805,7 @@
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/inbox.org" "/oc.org" "/projects.org" "/habits.org")))
+              '("/inbox.org" "/projects.org" "/habits.org" "~/org/agenda.org")))
 
 (defvar reading-list-file "~/org/reading-list.org")
 (defvar reading-list-n-items 5)

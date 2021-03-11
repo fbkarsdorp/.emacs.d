@@ -28,7 +28,7 @@
    '("#CC9393" "#DFAF8F" "#F0DFAF" "#7F9F7F" "#BFEBBF" "#93E0E3" "#94BFF3" "#DC8CC3"))
  '(ns-alternate-modifier 'none)
  '(org-agenda-files
-   '("~/org/agenda.org" "~/org/inbox.org" "~/org/oc.org" "~/org/projects.org" "~/org/habits.org"))
+   '("~/org/agenda.org" "~/org/inbox.org" "~/org/projects.org" "~/org/habits.org"))
  '(org-agenda-time-grid
    '((daily today require-timed)
      (800 1000 1200 1400 1600 1800)
