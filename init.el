@@ -750,16 +750,23 @@
   :after 'org)
 
 (setq org-agenda-block-separator (propertize
-                                  (concat (make-string 123 ?\u2594))
+                                  (make-string (frame-width) ?\u2594)
                                   'face '(:foreground "grey38"))
       org-super-agenda-header-separator "\n"
       org-habit-show-habits-only-for-today nil
       org-agenda-restore-windows-after-quit t
       org-agenda-show-future-repeats nil
-      org-agenda-span 'day
+      org-agenda-span 'week
+      org-agenda-start-on-weekday nil
       org-agenda-skip-deadline-prewarning-if-scheduled t
       org-agenda-skip-scheduled-if-done t
       org-agenda-skip-deadline-if-done t
+      org-agenda-format-date (lambda (date)
+                               (concat "\n"
+                                       (make-string (window-total-width) 9472)
+                                       "\n"
+                                       (org-agenda-format-date-aligned date)
+                                       "\n"))
       ;; org-agenda-window-setup 'only-window
       org-agenda-dim-blocked-tasks t
       ;; Was needed with a recent update of org. Reverted back to 9.2 for now.
@@ -776,12 +783,13 @@
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
          ((agenda ""
-                  ((org-agenda-overriding-header " Day Planner\n")
-                   (org-agenda-prefix-format '((agenda . " %?-12t% s")))
+                  ((org-agenda-overriding-header " Planner")
+                   (org-agenda-prefix-format '((agenda . " %?-12t")))
                    (org-super-agenda-groups
                     '((:name "" :time-grid t :scheduled t :deadline t :category "verjaardag")
-                      (:discard (:anything t))))))
-          (todo "TODO|NEXT|WAITING|HOLD"
+                      (:discard (:anything t))))))))
+        ("p" "Project backlog"
+          ((todo "TODO|NEXT|WAITING|HOLD"
                 ((org-agenda-overriding-header " Inbox\n")
                  (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                  (org-agenda-files '("~/org/inbox.org"))))
@@ -790,7 +798,8 @@
                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                   (org-agenda-files '("~/org/projects.org"))
                   (org-super-agenda-groups
-                   '((:auto-map (lambda (item)
+                   '((:discard (:scheduled t))
+                     (:auto-map (lambda (item)
                         (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n")))
                      (:discard (:anything t))))))
           (todo "NEXT"
