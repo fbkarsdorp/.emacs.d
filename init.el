@@ -791,7 +791,7 @@
 
         ("w" "Weekly review"
          ((tags (format-closed-query)
-                ((org-agenda-overriding-header "Overview DONE tasks")
+                ((org-agenda-overriding-header "Overview of DONE tasks")
                  (org-agenda-archives-mode t)))))))
 
 (defun show-my-agenda ()
