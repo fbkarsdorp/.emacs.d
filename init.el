@@ -11,9 +11,9 @@
                           ("elpy" . "http://jorgenschaefer.github.io/packages/")
                           ("org" . "https://orgmode.org/elpa/"))))
 
-(setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)
-                            (font . "Roboto Mono:style=Light:size=12")
-                            ;; (height . 61) (width . 186)
+(setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                           
+                            (font . "-*-JetBrains Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+                            (height . 58) (width . 219)
                             ;; (inhibit-double-buffering . t)
 			    ))
 (setq frame-inhibit-implied-resize t)
@@ -29,7 +29,8 @@
 (setenv "LANG" "en_US.UTF-8")
 
 (eval-when-compile
-  (require 'use-package))
+  (require 'use-package)
+  (require 'quelpa-use-package))
 (setq use-package-always-ensure t)
 (setq use-package-compute-statistics t)
 
@@ -42,7 +43,6 @@
 (scroll-bar-mode -1)
 (tooltip-mode -1)
 (fringe-mode 16) ;; I like a little more spacing
-;; ;; (setq ns-use-proxy-icon nil)
 (setq frame-title-format "")
 (show-paren-mode t)
 (blink-cursor-mode -1)
@@ -525,40 +525,6 @@
 (use-package perspective
   :config
   (persp-mode))
-;; (use-package json-mode
-;;   :mode "\\.json\\'")
-
-(use-package elfeed
-  :commands elfeed
-  :config
-  (setq elfeed-use-curl t)
-  (setq elfeed-feeds
-        '(;("https://statmodeling.stat.columbia.edu/feed/" stats modeling)
-          ("http://ehbea2020.com/feed/" conference)
-          ("https://rs.io/index.xml" stats data)
-          ("https://www.kaylinpavlik.com/rss/" data stats text-mining)
-          ("https://pure.knaw.nl/portal/en/organisations/meertens-institute(5faf53f1-ef25-4d7a-a95d-93c50bf0dc5b)/publications.rss?ordering=researchOutputOrderByPublicationYear&pageSize=100&page=0&descending=true" meertens)          
-          ("https://pure.knaw.nl/portal/en/organisations/meertens-instituut--nederlandse-etnologie(6ae411a6-9e14-45e0-af24-83d764add8a4)/publications.rss?pageSize=100&page=0&descending=true" meertens etnologie)
-          ("https://pure.knaw.nl/portal/en/organisations/meertens-instituut--variatielinguistiek(e1d4ebc4-143a-4523-8771-9fff0a3ee3e5)/publications.rss?pageSize=100&page=0&descending=true" meertens taalkunde)
-          ("https://tedunderwood.com/feed/" DH literature)
-          ("http://peterturchin.com/feed/" evolution turchin)
-          ("https://www.cambridge.org/core/rss/product/id/F9A99C4602D4F4A5277A9D3A04AE7353" evolution journal)
-          ("http://feeds.nature.com/palcomms/rss/current" palgrave)))
-  
-  (setq elfeed-show-mode-hook
-        (lambda ()
-          (setq fill-column 120)
-          (setq elfeed-show-entry-switch #'my-show-elfeed)))
-
-  (defun my-show-elfeed (buffer)
-    (with-current-buffer buffer
-      (setq buffer-read-only nil)
-      (goto-char (point-min))
-      (re-search-forward "\n\n")
-      (fill-individual-paragraphs (point) (point-max))
-      (setq buffer-read-only t))
-    (switch-to-buffer buffer))
-  :bind (("C-c C-e f" . 'elfeed)))
 
 (use-package avy
   :bind (("C-;" . 'avy-goto-char)
@@ -741,11 +707,8 @@
         ("m" "Meeting" entry (file+headline "~/org/agenda.org" "Toekomstig")
          "* %^{Description} :meeting:\n  %^t"
          :empty-lines 1)
-        ("r" "Read" entry (file+headline "~/org/reading-list.org" "Reading List")
+        ("r" "Read" entry (file+headline "~/org/leeslijst.org" "Articles")
          "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
-         :empty-lines 1)
-        ("n" "Note" entry (file+headline "~/org/inbox.org" "Notes")
-         "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
          :empty-lines 1)
         ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
          "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
@@ -763,6 +726,8 @@
     :bind (:map org-super-agenda-header-map ("<tab>" . origami-toggle-node))
     :hook (org-agenda-mode . origami-mode)))
 
+(use-package org-download)
+
 (use-package org-pomodoro
   :after 'org)
 
@@ -771,6 +736,7 @@
                                   'face '(:foreground "grey38"))
       org-super-agenda-header-separator "\n"
       org-habit-show-habits-only-for-today nil
+      org-agenda-sticky t
       org-agenda-restore-windows-after-quit t
       org-agenda-show-future-repeats nil
       org-agenda-span 'week
@@ -778,13 +744,7 @@
       org-agenda-skip-deadline-prewarning-if-scheduled t
       org-agenda-skip-scheduled-if-done t
       org-agenda-skip-deadline-if-done t
-      org-agenda-format-date (lambda (date)
-                               (concat "\n"
-                                       (make-string (window-total-width) 9472)
-                                       "\n"
-                                       (org-agenda-format-date-aligned date)
-                                       "\n"))
-      ;; org-agenda-window-setup 'only-window
+      org-agenda-format-date "\n%A, %-e %B %Y"
       org-agenda-dim-blocked-tasks t
       ;; Was needed with a recent update of org. Reverted back to 9.2 for now.
       org-agenda-cmp-user-defined (quote org-compare-deadline-date)
@@ -819,37 +779,65 @@
                      (:auto-map (lambda (item)
                         (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n")))
                      (:discard (:anything t))))))
-          (todo "NEXT"
-                ((org-agenda-overriding-header " Reading List\n")
+          (todo "TODO|NEXT"
+                ((org-agenda-overriding-header " Reading List")
                  (org-agenda-prefix-format " %?(org-deadline-ahead) ")
-                 (org-agenda-files '("~/org/reading-list.org"))))))
+                 (org-agenda-files '("~/org/leeslijst.org"))
+                 (org-super-agenda-groups
+                   '((:discard (:scheduled t))
+                     (:auto-map (lambda (item)
+                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n")))
+                     (:discard (:anything t))))))))
 
         ("w" "Weekly review"
          ((tags (format-closed-query)
                 ((org-agenda-overriding-header "Overview DONE tasks")
                  (org-agenda-archives-mode t)))))))
 
+(defun show-my-agenda ()
+  (interactive)
+  (progn
+    (org-agenda nil "d")
+    (org-agenda nil "p"))
+  (message "Agenda loaded"))
+
+(define-key global-map "\C-ca" 'show-my-agenda)
+
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
               '("/inbox.org" "/projects.org" "/habits.org" "~/org/agenda.org")))
 
-(defvar reading-list-file "~/org/reading-list.org")
-(defvar reading-list-n-items 5)
+(defun fk-window-displaying-agenda-p (window)
+  (equal (with-current-buffer (window-buffer window) major-mode)
+         'org-agenda-mode)) 
 
-(defun update-reading-list-todo ()
-  (with-current-buffer (find-file-noselect reading-list-file)
-    (goto-char (org-find-exact-headline-in-buffer "Reading List"))
-    (let ((currently-reading (apply '+ (org-map-entries (lambda () 1) "/NEXT"))))
-      (while (and (< currently-reading reading-list-n-items)
-                  (or (and (= (org-current-level) 1)
-                           (org-goto-first-child))
-                      (org-get-next-sibling)))
-        (when (string= (org-get-todo-state) "TODO")
-          (org-todo "NEXT")
-          (setq currently-reading (+ currently-reading 1)))))
-    (save-buffer)))
+(defun fk-position-calendar-buffer (buffer alist)
+  (let ((agenda-window (car (remove-if-not #'fk-window-displaying-agenda-p (window-list)))))
+    (when agenda-window
+      (let ((desired-window (split-window agenda-window nil 'below)))
+        (set-window-buffer desired-window  buffer)
+        desired-window))))
 
-(add-hook 'org-agenda-mode-hook 'update-reading-list-todo)
+(add-to-list 'display-buffer-alist (cons "\\*Calendar\\*" (cons #fk-position-calendar-buffer nil)))
+
+;; (defvar reading-list-file "~/org/reading-list.org")
+;; (defvar reading-list-n-items 5)
+
+;; (defun update-reading-list-todo ()
+;;   (with-current-buffer (find-file-noselect reading-list-file)
+;;     (goto-char (org-find-exact-headline-in-buffer "Reading List"))
+;;     (let ((currently-reading (apply '+ (org-map-entries (lambda () 1) "/NEXT"))))
+;;       (while (and (< currently-reading reading-list-n-items)
+;;                   (or (and (= (org-current-level) 1)
+;;                            (org-goto-first-child))
+;;                       (org-get-next-sibling)))
+;;         (when (string= (org-get-todo-state) "TODO")
+;;           (org-todo "NEXT")
+;;           (setq currently-reading (+ currently-reading 1)))))
+;;     (save-buffer)))
+
+;; (add-hook 'org-agenda-mode-hook 'update-reading-list-todo)
+
 (add-hook 'org-agenda-mode-hook 'org-super-agenda-mode)
 (add-hook 'org-mode-hook (lambda ()
   (define-key org-mode-map (kbd "C-c g") 'org-mac-grab-link)))
