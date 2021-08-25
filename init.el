@@ -213,12 +213,29 @@
   "Clear existing theme settings instead of layering them"
   (mapc #'disable-theme custom-enabled-themes))
 
-(use-package doom-themes
-  :config
-  (setq doom-monokai-pro-padded-modeline t)
-  (load-theme 'doom-monokai-pro t))
+;; (use-package doom-themes
+;;   :config
+;;   (setq doom-monokai-pro-padded-modeline t)
+;;   (load-theme 'doom-solarized-light t))
 
-(defvar my-selected-themes '((light . doom-flatwhite) (dark . doom-monokai-pro)))
+(use-package modus-themes
+  :init
+  (setq-default
+   modus-themes-diffs 'desaturated
+   modus-themes-headings '((t . section))
+   modus-themes-bold-constructs t
+   modus-themes-syntax 'faint
+   modus-themes-mode-line '(borderless)
+   modus-themes-prompts 'subtle
+   modus-themes-links '(no-underline)
+   modus-themes-completions 'opionated)
+  (setq modus-themes-org-agenda
+      '((header-date . (grayscale workaholic bold-today))
+        (scheduled . uniform)
+        (habit . simplified)))
+  (load-theme 'modus-operandi t))
+
+(defvar my-selected-themes '((light . modus-operandi) (dark . modus-vivendi)))
 (defvar current-theme-type 'light)
 (defun toggle-themes ()
   (interactive)
