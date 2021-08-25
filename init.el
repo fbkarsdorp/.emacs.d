@@ -455,8 +455,8 @@
           (deadgrep--search-type 'regexp))
       (deadgrep words))))
 
-(defun ivy-bibtex-format-pandoc-citation (keys)
-  (concat "[" (mapconcat (lambda (key) (concat "@" key)) keys "; ") "]"))
+;; (defun ivy-bibtex-format-pandoc-citation (keys)
+;;   (concat "[" (mapconcat (lambda (key) (concat "@" key)) keys "; ") "]"))
 
 (defun bibtex-pdf-open-function (fpath)
   (call-process "open" nil 0 nil "-a" "/Applications/Skim.app" fpath))
