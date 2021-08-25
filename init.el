@@ -466,13 +466,13 @@
   ("C-c C-r" . ivy-bibtex)
   :config
   (setq bibtex-completion-bibliography "~/org/bib.bib")
-  (setq bibtex-completion-notes-path "~/org/reading-notes.org")
+  ;; (setq bibtex-completion-notes-path "~/org/reading-notes.org")
   (setq bibtex-completion-pdf-field "File")
   (setq bibtex-completion-pdf-open-function 'bibtex-pdf-open-function)
   (setq ivy-bibtex-default-action #'ivy-bibtex-insert-citation)
   (setq bibtex-completion-display-formats '((t . "${author:36} ${title:*} ${year:4} ${=type=:7}")))
   (setq bibtex-completion-format-citation-functions
-        '((org-mode      . bibtex-completion-format-citation-org-title-link-to-PDF)
+        '(;(org-mode      . bibtex-completion-format-citation-org-title-link-to-PDF)
           (latex-mode    . bibtex-completion-format-citation-cite)
           (markdown-mode . bibtex-completion-format-citation-pandoc-citeproc)
           (default       . bibtex-completion-format-citation-default))))
@@ -1014,18 +1014,41 @@ _<f12>_ quit hydra
 
 (define-key dired-mode-map (kbd "<f12>") 'hydra-dired/body)
 
+
 (use-package org-roam
+  :init 
+  (setq org-roam-v2-ack t)
   :hook
   (after-init . org-roam-mode)
   :custom
-  (org-roam-directory "~/notes/")
-  :bind (:map org-roam-mode-map
-              (("C-c o l" . org-roam)
-               ("C-c o f" . org-roam-find-file)
-               ("C-c o g" . org-roam-graph))
-         :map org-mode-map
-              (("C-c o i" . org-roam-insert))
-              (("C-c o I" . org-roam-insert-immediate))))
+  (org-roam-directory (file-truename "~/kaartenbak"))
+  :bind (("C-c o l" . org-roam-buffer-toggle)
+         ("C-c o f" . org-roam-node-find)
+         ("C-c o g" . org-roam-graph)
+         ("C-c o i" . org-roam-node-insert)
+         ("C-c o c" . org-roam-capture)
+         ;; Dailies
+         ("C-c o j" . org-roam-dailies-capture-today))
+  :config
+  (org-roam-setup)
+  ;; If using org-roam-protocol
+  (require 'org-roam-protocol)
+  (setq org-roam-dailies-directory "daily/")
+  (setq org-roam-dailies-capture-templates
+      '(("d" "default" entry
+         "* %?"
+         :if-new (file+head "%<%Y-%m-%d>.org"
+                            "#+title: %<%Y-%m-%d>\n")))))
+
+(use-package org-roam-bibtex
+  :hook (org-roam-mode . org-roam-bibtex-mode)
+  :after org-roam)
+  ;; :config (require 'org-ref)
+  ;; (setq org-ref-default-bibliography '("~/org/bib.bib")))
+
+(require 'websocket)
+(add-to-list 'load-path "~/.emacs.d/elisp/org-roam-ui")
+(load-library "org-roam-ui")
 
 (use-package iflipb
   :bind*
