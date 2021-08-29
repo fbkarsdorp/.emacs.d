@@ -37,49 +37,55 @@
 (require 'diminish)
 (require 'bind-key)
 
-(setq inhibit-startup-message t)
+;; GUI simplifications
 (tool-bar-mode -1)
 (menu-bar-mode -1)
 (scroll-bar-mode -1)
 (tooltip-mode -1)
 (fringe-mode 16) ;; I like a little more spacing
+
+;; Customizations
+(setq inhibit-startup-message t)
 (setq frame-title-format "")
 (show-paren-mode t)
 (blink-cursor-mode -1)
+(setq cursor-type 'hbar)
 (save-place-mode 1)
 (setq sentence-end-double-space nil)
+(fset 'yes-or-no-p 'y-or-n-p)
+(setq large-file-warning-threshold 100000000)
+(setq-default indent-tabs-mode nil)
+(setq default-tab-width 4)
+(setq tab-width 4)
+(setq-default fill-column 90)
+(prefer-coding-system 'utf-8)
+(setq ring-bell-function 'ignore)
+(setq ns-use-native-fullscreen t)
+(setq backup-by-copying t)
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+(setq delete-old-versions t)
+(setq version-control t)
+(setq create-lockfiles nil)
 
 (use-package hl-line
   :ensure nil
   :custom-face (hl-line ((t (:extend t))))
   :hook (after-init . global-hl-line-mode))
 
-;; Changes all yes/no questions to y/n type
-(fset 'yes-or-no-p 'y-or-n-p)
-;; warn only for files larger than 100mb
-(setq large-file-warning-threshold 100000000)
-
-;; no tabs
-(setq-default indent-tabs-mode nil)
-(setq default-tab-width 4)
-(setq tab-width 4)
-(setq-default fill-column 90)
-(prefer-coding-system 'utf-8)
-
 (defun xah-unfill-paragraph ()
   (interactive)
   (let ((fill-column most-positive-fixnum))
     (fill-paragraph)))
+
+(use-package dired-subtree
+  :after dired
+  :bind (:map dired-mode-map ("<tab>" . dired-subtree-toggle)))
 
 ;; Dired configurations
 (add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1)))
 ;; (setq dired-listing-switches "-Ahl  --group-directories-first")
 (setq dired-recursive-deletes 'always)
 ;; (setq insert-directory-program "gls" dired-use-ls-dired t)
-
-(use-package dired-subtree
-  :after dired
-  :bind (:map dired-mode-map ("<tab>" . dired-subtree-toggle)))
 
 ;; use async where possible
 (use-package async
@@ -111,16 +117,6 @@
 
 (global-auto-revert-mode t)
 (add-hook 'text-mode-hook #'auto-fill-mode)
-
-(setq ring-bell-function 'ignore)
-(setq ns-use-native-fullscreen t)
-
-;;*** Backups
-(setq backup-by-copying t)
-(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
-(setq delete-old-versions t)
-(setq version-control t)
-(setq create-lockfiles nil)
 
 (defun new-scratch-pad ()
   "Create a new org-mode buffer for random stuff."
@@ -279,9 +275,6 @@
   :bind (("M-]" . 'elpy-nav-indent-shift-right)
          ("M-[" . 'elpy-nav-indent-shift-left)))
 
-;; (use-package jupyter
-;;   :defer t)
-
 (use-package ess
   :defer t
   :config
@@ -361,7 +354,6 @@
         "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
 
-
 (use-package rust-mode
   :bind ( :map rust-mode-map
                (("C-c C-t" . racer-describe)
@@ -407,38 +399,6 @@
               (lambda ()
                 (when (eq major-mode 'rust-mode)
                   (rust-format-buffer))))))
-
-;; (add-to-list 'auto-mode-alist '("\\.sbclrc$" . lisp-mode))
-
-;; ;; Use SLIME from Quicklisp
-;; (defun load-common-lisp-slime ()
-;;   (interactive)
-;;   ;; Common Lisp support depends on SLIME being installed with Quicklisp
-;;   (if (file-exists-p (expand-file-name "~/quicklisp/slime-helper.el"))
-;;       (load (expand-file-name "~/quicklisp/slime-helper.el"))
-;;     (message "%s" "SLIME is not installed. Use Quicklisp to install it.")))
-
-;; ;; start slime automatically when we open a lisp file
-;; (defun start-slime ()
-;;   (unless (slime-connected-p)
-;;     (save-excursion (slime))))
-
-;; (add-hook 'slime-mode-hook 'start-slime)
-
-;; (use-package slime
-;;   :ensure nil
-;;   :defer t
-;;   :commands (slime slime-lisp-mode-hook slime-mode)
-;;   :init (load-common-lisp-slime)
-;;   :config
-;;   (setq inferior-lisp-program "sbcl"
-;;         slime-net-coding-system 'utf-8-unix
-;;         slime-complete-symbol*-fancy t
-;;         slime-complete-symbol-function 'slime-fuzzy-complete-symbol
-;;         slime-default-lisp 'sbcl
-;;         slime-fuzzy-completion-in-place t
-;;         slime-enable-evaluate-in-emacs t
-;;         slime-autodoc-use-multiline-p t))
 
 (use-package wgrep :defer t)
 
@@ -599,23 +559,6 @@
 (setq org-agenda-search-view-always-boolean t)
 (setq org-use-speed-commands t)
 (setq org-latex-create-formula-image-program 'dvisvgm)
-
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((R . t) (python . t)));; (jupyter . t)))
-
-(setq my-org-structure-template-alist
-      '(("py" . "src python :results output")
-        ("r"  . "src R")
-        ("rp" . "src R :results output graphics :file (concat \"figures/\" (org-id-new) \".png\")")
-        ("j"  . "src jupyter-python :session py :async yes")))
-(dolist (template my-org-structure-template-alist)
-  (add-to-list 'org-structure-template-alist template))
-
-;; (use-package org-tempo
-;;   :ensure nil
-;;   :after org)
-
 (setq org-confirm-babel-evaluate nil)
 (setq org-enforce-todo-dependencies t)
 (setq org-log-done 'time)
@@ -674,7 +617,7 @@
                 (overlay-put ol (car proplist) (cadr proplist))))))
         (forward-line)))))
 
-(add-hook 'org-agenda-finalize-hook 'org-agenda-add-overlays)
+;; (add-hook 'org-agenda-finalize-hook 'org-agenda-add-overlays)
 (defface org-deadline-face '((t (:inherit (font-lock-comment-face))))
   "org-deadline-face")
 
@@ -721,6 +664,7 @@
   (format "+TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" (read-string "Number of days: ")))
 
 (use-package org-super-agenda
+  :after org
   :config
   (use-package origami
     :bind (:map org-super-agenda-header-map ("<tab>" . origami-toggle-node))
@@ -805,7 +749,7 @@
 
 (setq org-agenda-files
       (mapcar (lambda (f) (concat org-directory f))
-              '("/inbox.org" "/projects.org" "/habits.org" "~/org/agenda.org")))
+              '("/inbox.org" "/projects.org" "/habits.org" "/agenda.org" "/leeslijst.org")))
 
 (defun fk-window-displaying-agenda-p (window)
   (equal (with-current-buffer (window-buffer window) major-mode)
@@ -818,25 +762,7 @@
         (set-window-buffer desired-window  buffer)
         desired-window))))
 
-(add-to-list 'display-buffer-alist (cons "\\*Calendar\\*" (cons #fk-position-calendar-buffer nil)))
-
-;; (defvar reading-list-file "~/org/reading-list.org")
-;; (defvar reading-list-n-items 5)
-
-;; (defun update-reading-list-todo ()
-;;   (with-current-buffer (find-file-noselect reading-list-file)
-;;     (goto-char (org-find-exact-headline-in-buffer "Reading List"))
-;;     (let ((currently-reading (apply '+ (org-map-entries (lambda () 1) "/NEXT"))))
-;;       (while (and (< currently-reading reading-list-n-items)
-;;                   (or (and (= (org-current-level) 1)
-;;                            (org-goto-first-child))
-;;                       (org-get-next-sibling)))
-;;         (when (string= (org-get-todo-state) "TODO")
-;;           (org-todo "NEXT")
-;;           (setq currently-reading (+ currently-reading 1)))))
-;;     (save-buffer)))
-
-;; (add-hook 'org-agenda-mode-hook 'update-reading-list-todo)
+(add-to-list 'display-buffer-alist (cons "\\*Calendar\\*" (cons #'fk-position-calendar-buffer nil)))
 
 (add-hook 'org-agenda-mode-hook 'org-super-agenda-mode)
 (add-hook 'org-mode-hook (lambda ()
@@ -892,15 +818,6 @@
           "* TODO %^{Todo} \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?")
     (push (org-projectile-project-todo-entry :empty-lines 1) org-capture-templates))
   :bind (("C-c n" . org-projectile-project-todo-completing-read)))
-
-
-(use-package zotxt
-  :after org
-  :defer t
-  :config
-  :hook (org-mode-hook . (lambda () (org-zotxt-mode 1)))
-  :bind (("C-c o r" . (lambda () (interactive)
-                        (org-zotxt-insert-reference-link '(4))))))
 
 ;; Hydra for org agenda (graciously taken from Spacemacs)
 (defhydra hydra-org-agenda (:pre (setq which-key-inhibit t)
