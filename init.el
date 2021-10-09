@@ -9,13 +9,13 @@
 			package-archives
 			'(("melpa" . "https://melpa.org/packages/")
                           ("elpy" . "http://jorgenschaefer.github.io/packages/")
-                          ("org" . "https://orgmode.org/elpa/"))))
+                          ("elpa" . "https://elpa.nongnu.org/nongnu/"))))
+                          ;; ("org" . "https://orgmode.org/elpa/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                           
-                            (font . "-*-JetBrains Mono-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
-                            (height . 58) (width . 219)
-                            ;; (inhibit-double-buffering . t)
-			    ))
+                            (font . "-*-JetBrains Mono-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (height . 58) (width . 219)))
+
 (setq frame-inhibit-implied-resize t)
 (setq initial-major-mode 'fundamental-mode)
 (setq initial-scratch-message "")
@@ -34,6 +34,8 @@
 (setq use-package-always-ensure t)
 (setq use-package-compute-statistics t)
 
+(use-package org :ensure org-contrib)
+
 (require 'diminish)
 (require 'bind-key)
 
@@ -49,7 +51,7 @@
 (setq frame-title-format "")
 (show-paren-mode t)
 (blink-cursor-mode -1)
-(setq cursor-type 'hbar)
+(setq-default cursor-type 'hbar)
 (save-place-mode 1)
 (setq sentence-end-double-space nil)
 (fset 'yes-or-no-p 'y-or-n-p)
@@ -79,6 +81,8 @@
 
 (use-package dired-subtree
   :after dired
+  :config
+  (setq dired-subtree-use-backgrounds nil)
   :bind (:map dired-mode-map ("<tab>" . dired-subtree-toggle)))
 
 ;; Dired configurations
@@ -132,12 +136,6 @@
 (use-package move-text
   :config (move-text-default-bindings))
 
-(use-package paradox
-  :defer t
-  :config
-  (setq paradox-execute-asynchronously t)
-  (paradox-enable))
-
 (use-package tex
   :defer t
   :ensure auctex
@@ -183,6 +181,9 @@
                ("\\paragraph{%s}" . "\\paragraph*{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
+(use-package ox-pandoc
+  :defer t)
+
 (use-package csv-mode
   :defer t)
 
@@ -209,36 +210,40 @@
   "Clear existing theme settings instead of layering them"
   (mapc #'disable-theme custom-enabled-themes))
 
-;; (use-package doom-themes
-;;   :config
-;;   (setq doom-monokai-pro-padded-modeline t)
-;;   (load-theme 'doom-solarized-light t))
+(use-package doom-themes
+  :config
+  ;; (setq doom-monokai-pro-padded-modeline t)
+  (load-theme 'doom-one t))
 
-(use-package modus-themes
-  :init
-  (setq-default
-   modus-themes-diffs 'desaturated
-   modus-themes-headings '((t . section))
-   modus-themes-bold-constructs t
-   modus-themes-syntax 'faint
-   modus-themes-mode-line '(borderless)
-   modus-themes-prompts 'subtle
-   modus-themes-links '(no-underline)
-   modus-themes-completions 'opionated)
-  (setq modus-themes-org-agenda
-      '((header-date . (grayscale workaholic bold-today))
-        (scheduled . uniform)
-        (habit . simplified)))
-  (load-theme 'modus-operandi t))
+(use-package doom-modeline
+  :ensure t
+  :hook (after-init . doom-modeline-mode))
 
-(defvar my-selected-themes '((light . modus-operandi) (dark . modus-vivendi)))
-(defvar current-theme-type 'light)
-(defun toggle-themes ()
-  (interactive)
-  (if (eq current-theme-type 'light)
-      (setq current-theme-type 'dark)
-    (setq current-theme-type 'light))
-  (load-theme (cdr (assoc current-theme-type my-selected-themes)) t))
+;; (use-package modus-themes
+;;   :init
+;;   (setq-default
+;;    modus-themes-diffs 'desaturated
+;;    modus-themes-headings '((t . section))
+;;    modus-themes-bold-constructs t
+;;    modus-themes-syntax 'faint
+;;    modus-themes-mode-line '(borderless)
+;;    modus-themes-prompts 'subtle
+;;    modus-themes-links '(no-underline)
+;;    modus-themes-completions 'opionated)
+;;   (setq modus-themes-org-agenda
+;;       '((header-date . (grayscale workaholic bold-today))
+;;         (scheduled . uniform)
+;;         (habit . simplified)))
+;;   (load-theme 'modus-operandi t))
+
+;; (defvar my-selected-themes '((light . modus-operandi) (dark . modus-vivendi)))
+;; (defvar current-theme-type 'light)
+;; (defun toggle-themes ()
+;;   (interactive)
+;;   (if (eq current-theme-type 'light)
+;;       (setq current-theme-type 'dark)
+;;     (setq current-theme-type 'light))
+;;   (load-theme (cdr (assoc current-theme-type my-selected-themes)) t))
 
 (use-package minions
   :config (minions-mode 1))
@@ -341,7 +346,7 @@
          ("C-c i" . 'counsel-imenu)
          ("C-c l" . 'counsel-locate)
          ("C-c c" . 'counsel-org-capture)
-         ("C-x b" . 'counsel-switch-buffer))
+         ("C-x b" . 'ivy-switch-buffer))
   :config
   (setq counsel-git-cmd "rg --files")
   (setq counsel-grep-base-command "grep -niE %s %s")
@@ -415,9 +420,6 @@
           (deadgrep--search-type 'regexp))
       (deadgrep words))))
 
-;; (defun ivy-bibtex-format-pandoc-citation (keys)
-;;   (concat "[" (mapconcat (lambda (key) (concat "@" key)) keys "; ") "]"))
-
 (defun bibtex-pdf-open-function (fpath)
   (call-process "open" nil 0 nil "-a" "/Applications/Skim.app" fpath))
 
@@ -432,7 +434,7 @@
   (setq ivy-bibtex-default-action #'ivy-bibtex-insert-citation)
   (setq bibtex-completion-display-formats '((t . "${author:36} ${title:*} ${year:4} ${=type=:7}")))
   (setq bibtex-completion-format-citation-functions
-        '(;(org-mode      . bibtex-completion-format-citation-org-title-link-to-PDF)
+        '((org-mode      . bibtex-completion-format-citation-org-cite)
           (latex-mode    . bibtex-completion-format-citation-cite)
           (markdown-mode . bibtex-completion-format-citation-pandoc-citeproc)
           (default       . bibtex-completion-format-citation-default))))
@@ -481,10 +483,6 @@
    'counsel-projectile-switch-project-action
    '((move counsel-projectile-switch-project-action-dired 1)
      (setkey counsel-projectile-switch-project-action-dired "D"))))
-
-(use-package perspective
-  :config
-  (persp-mode))
 
 (use-package avy
   :bind (("C-;" . 'avy-goto-char)
@@ -535,38 +533,46 @@
   :config
   (setq org-fancy-priorities-list '("" "" "")))
 
-(setq org-directory "~/org")
-(setq org-default-notes-file (concat org-directory "/notes.org"))
-;;(define-key global-map "\C-cc" 'org-capture)
 (define-key global-map "\C-ca" 'org-agenda)
-
 ;; remove ^ for refile searches
 (mapc (lambda (item)
         (setf (alist-get item ivy-initial-inputs-alist) ""))
       '(org-refile org-agenda-refile org-capture-refile))
 
-(setq org-todo-keywords '((sequence "TODO" "NEXT" "WAITING" "|" "DONE" "CANCELLED" "HOLD")))
-(setq org-refile-use-outline-path 'file)
-(setq org-outline-path-complete-in-steps nil)
-(setq org-refile-allow-creating-parent-nodes 'confirm)
-(setq org-refile-targets '((org-agenda-files :maxlevel . 2)))
-(setq org-refile-targets
-      '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")))
-(setq org-refile-use-outline-path 'file)
-(setq org-outline-path-complete-in-steps nil)
-(setq org-src-fontify-natively t)
-(setq org-hide-leading-stars t)
-(setq org-agenda-search-view-always-boolean t)
-(setq org-use-speed-commands t)
-(setq org-latex-create-formula-image-program 'dvisvgm)
-(setq org-confirm-babel-evaluate nil)
-(setq org-enforce-todo-dependencies t)
-(setq org-log-done 'time)
-(setq org-log-into-drawer t)
+(setq org-directory "~/org"
+      org-default-notes-file (concat org-directory "/notes.org")
+      org-todo-keywords '((sequence "TODO" "NEXT" "WAITING" "|" "DONE" "CANCELLED" "HOLD"))
+      ;; Refiling customizations
+      org-refile-use-outline-path 'file
+      org-outline-path-complete-in-steps nil
+      org-refile-allow-creating-parent-nodes 'confirm
+      org-refile-targets '((org-agenda-files :maxlevel . 2))
+      org-refile-targets '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)"))
+      ;; Stylistics
+      org-src-fontify-natively t
+      org-hide-leading-stars t
+      org-agenda-search-view-always-boolean t
+      org-use-speed-commands t ;; allows faster navigation in org buffers
+      org-latex-create-formula-image-program 'dvisvgm
+      org-confirm-babel-evaluate nil
+      org-enforce-todo-dependencies t
+      org-log-done 'time
+      org-log-into-drawer t
+      org-cite-global-bibliography '("~/org/bib.bib")
+      org-agenda-files (mapcar (lambda (f) (concat org-directory f))
+                               '("/inbox.org" "/projects.org" "/habits.org" "/agenda.org" "/leeslijst.org")))
 
 (use-package org-cliplink
   :defer t
   :after org)
+
+(defun clip-link-http-or-file ()
+  (interactive)
+  (if (yes-or-no-p "Web link? ")
+      (org-cliplink-capture)
+    (let ((link (read-file-name "Enter file path: "))
+          (description (read-string "Description: ")))
+      (org-make-link-string link description))))
 
 (defun org-deadline-ahead (&optional pos)
   (let* ((days (time-to-number-of-days (org-deadline-ahead-time pos)))
@@ -584,64 +590,12 @@
                       (org-entry-get (or pos (point)) "DEADLINE" t))
                      (current-time)))))
 
-;; Custom sort function, after deadline-up broke with a recent update (9.2.1)
-(defun org-compare-deadline-date (a b)
-  (let ((time-a (org-deadline-ahead-time (get-text-property 0 'org-hd-marker a)))
-        (time-b (org-deadline-ahead-time (get-text-property 0 'org-hd-marker b))))
-    (if (time-less-p time-a time-b)
-        -1
-      (if (equal time-a time-b)
-          0
-        1))))
-
-(defun org-agenda-add-overlays (&optional line)
-  (let ((inhibit-read-only t) l c
-        (buffer-invisibility-spec '(org-link)))
-    (save-excursion
-      (goto-char (if line (point-at-bol) (point-min)))
-      (while (not (eobp))
-        (let ((org-marker (get-text-property (point) 'org-marker)))
-          (when (and org-marker
-                     (null (overlays-at (point)))
-                     (not (org-entry-get org-marker "CLOSED" t))
-                     (org-entry-get org-marker "DEADLINE" t))
-            (goto-char (line-end-position))
-            (let* ((ol (make-overlay (line-beginning-position)
-                                     (line-end-position)))
-                   (days (time-to-number-of-days (org-deadline-ahead-time org-marker)))
-                   (proplist (cond
-                              ((< days 1) '(face org-warning))
-                              ((< days 5) '(face org-scheduled)))))
-                              ;; ((< days 30) '(face org-scheduled)))))
-              (when proplist
-                (overlay-put ol (car proplist) (cadr proplist))))))
-        (forward-line)))))
-
-;; (add-hook 'org-agenda-finalize-hook 'org-agenda-add-overlays)
 (defface org-deadline-face '((t (:inherit (font-lock-comment-face))))
   "org-deadline-face")
 
 (add-hook 'org-agenda-finalize-hook
           (lambda ()
           (highlight-regexp "^[[:blank:]]+\\+[0-9]+[md]" 'org-deadline-face)))
-
-(defun clip-link-http-or-file ()
-  (interactive)
-  (if (yes-or-no-p "Web link? ")
-      (org-cliplink-capture)
-    (let ((link (read-file-name "Enter file path: "))
-          (description (read-string "Description: ")))
-      (org-make-link-string link description))))
-
-(defun toggle-org-speed-keys ()
-  (interactive)
-  (if org-use-speed-commands
-      (progn
-        (setq org-use-speed-commands nil)
-        (message "Org speed commands turned off."))
-    (progn
-      (setq org-use-speed-commands t)
-      (message "Org speed commands turned on."))))
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Tasks")
@@ -671,9 +625,7 @@
     :hook (org-agenda-mode . origami-mode)))
 
 (use-package org-download)
-
-(use-package org-pomodoro
-  :after 'org)
+(use-package org-pomodoro :after 'org)
 
 (setq org-agenda-block-separator (propertize
                                   (make-string (frame-width) ?\u2594)
@@ -690,8 +642,6 @@
       org-agenda-skip-deadline-if-done t
       org-agenda-format-date "\n%A, %-e %B %Y"
       org-agenda-dim-blocked-tasks t
-      ;; Was needed with a recent update of org. Reverted back to 9.2 for now.
-      org-agenda-cmp-user-defined (quote org-compare-deadline-date)
       org-todo-keyword-faces
       '(("TODO" . (font-lock-variable-name-face :weight bold))
         ("WAITING" . (font-lock-function-name-face :weight bold))
@@ -719,7 +669,7 @@
                   (org-agenda-prefix-format " %?(org-deadline-ahead) ")
                   (org-agenda-files '("~/org/projects.org"))
                   (org-super-agenda-groups
-                   '((:discard (:scheduled t))
+                   '((:discard (:scheduled t :date t))
                      (:auto-map (lambda (item)
                         (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n")))
                      (:discard (:anything t))))))
@@ -747,10 +697,7 @@
 
 (define-key global-map "\C-ca" 'show-my-agenda)
 
-(setq org-agenda-files
-      (mapcar (lambda (f) (concat org-directory f))
-              '("/inbox.org" "/projects.org" "/habits.org" "/agenda.org" "/leeslijst.org")))
-
+;; Functions to keep alendar in sight when working on the agenda
 (defun fk-window-displaying-agenda-p (window)
   (equal (with-current-buffer (window-buffer window) major-mode)
          'org-agenda-mode)) 
@@ -768,35 +715,6 @@
 (add-hook 'org-mode-hook (lambda ()
   (define-key org-mode-map (kbd "C-c g") 'org-mac-grab-link)))
 
-(defun counsel-find-org-file ()
-  (interactive)
-  (let ((file-list (seq-filter (lambda (f) (string-match-p "\\.org\\'" f))
-                               (directory-files "~/org"))))
-    (ivy-read "org files: " file-list
-              :require-match nil
-              :action (lambda (f) (find-file (concat org-directory "/" f)))
-              :caller 'counsel-find-org-file)))
-
-(define-key global-map "\C-cy" 'counsel-find-org-file)
-
-;; org-projectile for project bases org projects.
-(defvar project-todos "projects.org")
-(defvar org-capture-before-config nil)
-
-(defadvice org-capture (before save-config activate)
-  "Save the window configuration before `org-capture'."
-  (setq org-capture-before-config (current-window-configuration)))
-
-(defun org-projectile-cleanup ()
-  "Clean up the frame created while capturing via `org-projectile'."
-  (when (get-buffer project-todos)
-    (kill-buffer project-todos))
-  (when org-capture-before-config
-    (set-window-configuration org-capture-before-config)))
-
-(add-hook 'org-capture-mode-hook 'delete-other-windows)
-(add-hook 'org-capture-after-finalize-hook 'org-projectile-cleanup)
-
 (org-add-link-type "message" 'org-mac-message-open)
 
 (defun org-mac-message-open (message-id)
@@ -806,79 +724,6 @@
   (browse-url (concat "message://%3c" (substring message-id 2) "%3e")))
 
 (use-package fontawesome)
-
-(use-package org-projectile
-  :after org
-  :defer t
-  :config  
-  (progn
-    (setq org-projectile-projects-file (concat org-directory "/" project-todos))
-    (setq org-confirm-elisp-link-function nil)
-    (setq org-projectile-capture-template
-          "* TODO %^{Todo} \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?")
-    (push (org-projectile-project-todo-entry :empty-lines 1) org-capture-templates))
-  :bind (("C-c n" . org-projectile-project-todo-completing-read)))
-
-;; Hydra for org agenda (graciously taken from Spacemacs)
-(defhydra hydra-org-agenda (:pre (setq which-key-inhibit t)
-                            :post (setq which-key-inhibit nil)
-                            :hint none)
-"
-^Navigate^                 ^Headline^         ^Date^             ^Clock^      ^Filter^                 ^View^      ^Other^
-^--------^---------------- ^--------^-------- ^----^------------ ^-----^----- ^------^---------------- ^----^----- ^-----^-----------
-_n_:   next entry          _t_: toggle status _ds_: schedule     _I_:  in     _ft_: by tag             _vd_: day   _g_ rebuild agenda
-_p_:   previous entry      _r_: refile        _dd_: set deadline _O_:  out    _fr_: refile by tag      _vw_: week  _x_ exit and kill
-_SPC_: in other window     _a_: archive       _dt_: timestamp    _cq_: cancel _fc_: by category        _vm_: month _s_ save buffers
-_TAB_: & go to location    _:_: set tags      _+_:  do later     _j_:  jump   _fh_: by headline        _vy_: year  ^^
-_RET_: & del other windows _,_: set priority  _-_:  do earlier   ^^           _fx_: by regexp          _vr_: reset ^^
-^^                         ^^                 ^^                 ^^           _fd_: delete all filters ^^          ^^
-^^                         ^^                 ^^                 ^^           ^^                       ^^          ^^
-_<f12>_ quit hydra
-"
-  ;; Navigate
-  ("n" org-agenda-next-line)
-  ("p" org-agenda-previous-line)
-  ("SPC" org-agenda-show-and-scroll-up)
-  ("<tab>" org-agenda-goto :exit t)
-  ("TAB" org-agenda-goto :exit t)
-  ("RET" org-agenda-switch-to :exit t)
-  ;; Headline
-  ("t" org-agenda-todo)
-  ("r" org-agenda-refile)
-  ("a" org-agenda-archive-default)
-  (":" org-agenda-set-tags)
-  ("," org-agenda-priority)
-  ;; Date
-  ("dt" org-agenda-date-prompt)
-  ("dd" org-agenda-deadline)
-  ("+" org-agenda-do-date-later)
-  ("-" org-agenda-do-date-earlier)
-  ("ds" org-agenda-schedule)
-  ;; Clock
-  ("cq" org-agenda-clock-cancel)
-  ("j" org-agenda-clock-goto :exit t)
-  ("I" org-agenda-clock-in :exit t)
-  ("O" org-agenda-clock-out)
-  ;; Filter
-  ("fc" org-agenda-filter-by-category)
-  ("fx" org-agenda-filter-by-regexp)
-  ("ft" org-agenda-filter-by-tag)
-  ("fr" org-agenda-filter-by-tag-refine)
-  ("fh" org-agenda-filter-by-top-headline)
-  ("fd" org-agenda-filter-remove-all)
-  ;; View
-  ("vd" org-agenda-day-view)
-  ("vw" org-agenda-week-view)
-  ("vm" org-agenda-month-view)
-  ("vy" org-agenda-year-view)
-  ("vr" org-agenda-reset-view)
-  ;; Other
-  ("<f12>" nil :exit t)
-  ("g" org-agenda-redo)
-  ("s" org-save-all-org-buffers)
-  ("x" org-agenda-exit :exit t))
-
-(add-hook 'org-agenda-mode-hook (lambda () (local-set-key (kbd "<f12>") 'hydra-org-agenda/body)))
 
 (defhydra hydra-dired (:hint nil)
   "
@@ -919,7 +764,6 @@ _<f12>_ quit hydra
 
 (define-key dired-mode-map (kbd "<f12>") 'hydra-dired/body)
 
-
 (use-package org-roam
   :init 
   (setq org-roam-v2-ack t)
@@ -936,6 +780,7 @@ _<f12>_ quit hydra
          ("C-c o j" . org-roam-dailies-capture-today))
   :config
   (org-roam-setup)
+  (setq org-roam-db-gc-threshold (* 10 1024 1024))
   ;; If using org-roam-protocol
   (require 'org-roam-protocol)
   (setq org-roam-dailies-directory "daily/")
@@ -951,14 +796,11 @@ _<f12>_ quit hydra
   ;; :config (require 'org-ref)
   ;; (setq org-ref-default-bibliography '("~/org/bib.bib")))
 
-(require 'websocket)
+
+(use-package websocket)
+(use-package simple-httpd)
 (add-to-list 'load-path "~/.emacs.d/elisp/org-roam-ui")
 (load-library "org-roam-ui")
-
-(use-package iflipb
-  :bind*
-  (("M-}" . iflipb-next-buffer)
-   ("M-{" . iflipb-previous-buffer)))
 
 (use-package smerge-mode
   :defer t
