@@ -266,7 +266,7 @@
   :defer t
   :init (advice-add 'python-mode :before 'elpy-enable)
   :config
-  (setq elpy-rpc-python-command "/usr/local/bin/python3")
+  (setq elpy-rpc-python-command "python3")
   (eldoc-add-command-completions "company-")
   (eldoc-add-command-completions "python-indent-dedent-line-backspace")
   ;; only use bare minimum of modules. No need for all fancy stuff
