@@ -233,8 +233,8 @@
       '((header-date . (grayscale workaholic bold-today))
         (scheduled . uniform)
         (habit . traffic-light)))
-  (setq modus-themes-operandi-color-overrides
-        '((bg-main . "#f5f5f5"))) ;; slightly less white...
+  ;; (setq modus-themes-operandi-color-overrides
+  ;;       '((bg-main . "#f5f5f5"))) ;; slightly less white...
   ;; (setq modus-themes-vivendi-color-overrides
   ;;     '((bg-main . "#181a20"))) ;; slightly less black...   
   (modus-themes-load-themes)
