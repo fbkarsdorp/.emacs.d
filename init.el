@@ -13,7 +13,7 @@
                           ;; ("org" . "https://orgmode.org/elpa/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                           
-                            (font . "-*-JetBrains Mono-normal-normal-normal-*-12-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Iosevka-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
                             (height . 58) (width . 219)))
 
 (setq frame-inhibit-implied-resize t)
@@ -210,47 +210,43 @@
   "Clear existing theme settings instead of layering them"
   (mapc #'disable-theme custom-enabled-themes))
 
-(use-package doom-themes
+(use-package moody
   :config
-  ;; (setq doom-monokai-pro-padded-modeline t)
-  (load-theme 'doom-one t))
+  (setq x-underline-at-descent-line t)
+  (moody-replace-mode-line-buffer-identification)
+  (moody-replace-vc-mode))
 
-(use-package doom-modeline
-  :ensure t
-  :hook (after-init . doom-modeline-mode))
-
-;; (use-package modus-themes
-;;   :init
-;;   (setq-default
-;;    modus-themes-diffs 'desaturated
-;;    modus-themes-headings '((t . section))
-;;    modus-themes-bold-constructs t
-;;    modus-themes-syntax 'faint
-;;    modus-themes-mode-line '(borderless)
-;;    modus-themes-prompts 'subtle
-;;    modus-themes-links '(no-underline)
-;;    modus-themes-completions 'opionated)
-;;   (setq modus-themes-org-agenda
-;;       '((header-date . (grayscale workaholic bold-today))
-;;         (scheduled . uniform)
-;;         (habit . simplified)))
-;;   (load-theme 'modus-operandi t))
-
-;; (defvar my-selected-themes '((light . modus-operandi) (dark . modus-vivendi)))
-;; (defvar current-theme-type 'light)
-;; (defun toggle-themes ()
-;;   (interactive)
-;;   (if (eq current-theme-type 'light)
-;;       (setq current-theme-type 'dark)
-;;     (setq current-theme-type 'light))
-;;   (load-theme (cdr (assoc current-theme-type my-selected-themes)) t))
+(use-package modus-themes
+  :init
+  (setq modus-themes-bold-constructs t
+        modus-themes-completions 'opionated
+        modus-themes-diffs 'desaturated
+        modus-themes-headings '((t . section))
+        modus-themes-hl-line '(underline accented)
+        modus-themes-links '(no-underline)
+        modus-themes-mixed-fonts nil
+        modus-themes-mode-line '(moody borderless)
+        modus-themes-prompts '(background)
+        ;; modus-themes-syntax '(faint)
+        )
+  (setq modus-themes-org-agenda
+      '((header-date . (grayscale workaholic bold-today))
+        (scheduled . uniform)
+        (habit . traffic-light)))
+  (setq modus-themes-operandi-color-overrides
+        '((bg-main . "#f5f5f5"))) ;; slightly less white...
+  ;; (setq modus-themes-vivendi-color-overrides
+  ;;     '((bg-main . "#181a20"))) ;; slightly less black...   
+  (modus-themes-load-themes)
+  :config
+  (modus-themes-load-operandi)
+  :bind ("<f5>" . modus-themes-toggle))
 
 (use-package minions
   :config (minions-mode 1))
 
 (use-package company
   :config
-  ;; (global-company-mode)
   (add-hook 'prog-mode-hook 'company-mode)
   (setq company-global-modes '(not text-mode term-mode markdown-mode gfm-mode))
   (setq company-selection-wrap-around t
@@ -331,7 +327,11 @@
 (use-package ivy-hydra
   :defer t)
 
-(use-package smex)
+;; (use-package smex)
+
+(use-package prescient)
+(use-package ivy-prescient
+  :config (ivy-prescient-mode))
 
 (defun counsel-locate-cmd-mdfind (input)
   "Return a shell command based on INPUT."
@@ -524,6 +524,10 @@
 
 (use-package vterm)
 
+(use-package terminal-here
+  :config
+  (setq terminal-here-mac-terminal-command 'iterm2))
+
 (use-package gitignore-templates
   :defer t)
 
@@ -550,7 +554,8 @@
       org-refile-targets '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)"))
       ;; Stylistics
       org-src-fontify-natively t
-      org-hide-leading-stars t
+      org-hide-leading-stars nil
+      org-adapt-indentation nil
       org-agenda-search-view-always-boolean t
       org-use-speed-commands t ;; allows faster navigation in org buffers
       org-latex-create-formula-image-program 'dvisvgm
@@ -599,19 +604,22 @@
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Tasks")
-         "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
          :empty-lines 1)
         ("m" "Meeting" entry (file+headline "~/org/agenda.org" "Toekomstig")
-         "* %^{Description} :meeting:\n  %^t"
+         "* %^{Description} :meeting:\n%^t"
          :empty-lines 1)
         ("r" "Read" entry (file+headline "~/org/leeslijst.org" "Articles")
-         "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
+         :empty-lines 1)
+        ("n" "Note" entry (file+headline "~/org/inbox.org" "Notes")
+         "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
          :empty-lines 1)
         ("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
-         "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
          :empty-lines 1)
         ("e" "Mail" entry (file+headline "~/org/inbox.org" "Mail")
-         "* TODO  %(org-mac-message-get-links \"s\") %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n  %?"
+         "* TODO  %(org-mac-message-get-links \"s\") %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
          :empty-lines 1)))
 
 (defun format-closed-query ()
@@ -642,15 +650,6 @@
       org-agenda-skip-deadline-if-done t
       org-agenda-format-date "\n%A, %-e %B %Y"
       org-agenda-dim-blocked-tasks t
-      org-todo-keyword-faces
-      '(("TODO" . (font-lock-variable-name-face :weight bold))
-        ("WAITING" . (font-lock-function-name-face :weight bold))
-        ("CANCELLED" . (font-lock-constant-face :weight bold))
-        ("NEXT" . (font-lock-string-face :weight bold)))
-      org-priority-faces
-      '((?A . (font-lock-constant-face :weight bold))
-        (?B . (font-lock-function-name-face :weight bold))
-        (?C . (font-lock-variable-name-face :weight bold)))
       org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
          ((agenda ""
