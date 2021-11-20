@@ -12,9 +12,10 @@
                           ("elpa" . "https://elpa.nongnu.org/nongnu/"))))
                           ;; ("org" . "https://orgmode.org/elpa/"))))
 
-(setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                           
+(setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                          
                             (font . "-*-Iosevka-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
                             (height . 58) (width . 219)))
+
 
 (setq frame-inhibit-implied-resize t)
 (setq initial-major-mode 'fundamental-mode)
@@ -73,6 +74,12 @@
   :ensure nil
   :custom-face (hl-line ((t (:extend t))))
   :hook (after-init . global-hl-line-mode))
+
+;; (use-package hl-line+
+;;   :load-path "elisp"
+;;   :config
+;;   (hl-line-when-idle-interval 0.3)
+;;   (toggle-hl-line-when-idle 1))
 
 (defun xah-unfill-paragraph ()
   (interactive)
@@ -222,21 +229,17 @@
         modus-themes-completions 'opionated
         modus-themes-diffs 'desaturated
         modus-themes-headings '((t . section))
-        modus-themes-hl-line '(underline accented)
+        modus-themes-hl-line '(accented)
         modus-themes-links '(no-underline)
         modus-themes-mixed-fonts nil
         modus-themes-mode-line '(moody borderless)
         modus-themes-prompts '(background)
-        ;; modus-themes-syntax '(faint)
+        modus-themes-syntax '(faint)
         )
   (setq modus-themes-org-agenda
       '((header-date . (grayscale workaholic bold-today))
         (scheduled . uniform)
         (habit . traffic-light)))
-  ;; (setq modus-themes-operandi-color-overrides
-  ;;       '((bg-main . "#f5f5f5"))) ;; slightly less white...
-  ;; (setq modus-themes-vivendi-color-overrides
-  ;;     '((bg-main . "#181a20"))) ;; slightly less black...   
   (modus-themes-load-themes)
   :config
   (modus-themes-load-operandi)
@@ -259,22 +262,56 @@
   (define-key company-active-map (kbd "C-n") 'company-select-next)
   (define-key company-active-map (kbd "C-p") 'company-select-previous)
   ;; (add-to-list 'company-frontends 'company-tng-frontend)
-  :bind (("TAB" . 'company-indent-or-complete-common)))
+  ;; :bind (("TAB" . 'company-indent-or-complete-common)))
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map ("<tab>" . company-complete-selection))
+  (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common)))
 
-(use-package elpy
-  ;; :commands elpy-enable
-  :defer t
-  :init (advice-add 'python-mode :before 'elpy-enable)
+(use-package lsp-mode
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+         ;; (julia-mode . lsp)
+         (python-mode . lsp)
+         ;; if you want which-key integration
+         (lsp-mode . lsp-enable-which-key-integration))
   :config
-  (setq elpy-rpc-python-command "python3")
-  (eldoc-add-command-completions "company-")
-  (eldoc-add-command-completions "python-indent-dedent-line-backspace")
-  ;; only use bare minimum of modules. No need for all fancy stuff
-  (setq elpy-modules '(elpy-module-company elpy-module-eldoc))
-  (setq python-shell-interpreter "ipython"
-        python-shell-interpreter-args "-i --simple-prompt")
-  :bind (("M-]" . 'elpy-nav-indent-shift-right)
-         ("M-[" . 'elpy-nav-indent-shift-left)))
+  (setq lsp-enable-symbol-highlighting nil
+        lsp-lens-enable nil
+        lsp-headerline-breadcrumb-enable nil
+        lsp-modeline-code-actions-enable nil
+        lsp-diagnostics-provider :none
+        lsp-modeline-diagnostics-enable nil
+        lsp-completion-show-detail nil
+        lsp-completion-show-kind nil
+        lsp-pyright-python-executable-cmd "python3"
+        )
+  :commands (lsp lsp-deferred))
+
+(use-package lsp-pyright
+  :ensure t
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp))))  ; or lsp-deferred
+
+(use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+
+
+;; (use-package elpy
+;;   ;; :commands elpy-enable
+;;   :defer t
+;;   :init (advice-add 'python-mode :before 'elpy-enable)
+;;   :config
+;;   (setq elpy-rpc-python-command "python3")
+;;   (eldoc-add-command-completions "company-")
+;;   (eldoc-add-command-completions "python-indent-dedent-line-backspace")
+;;   ;; only use bare minimum of modules. No need for all fancy stuff
+;;   (setq elpy-modules '(elpy-module-company elpy-module-eldoc))
+;;   (setq python-shell-interpreter "ipython"
+;;         python-shell-interpreter-args "-i --simple-prompt")
+;;   :bind (("M-]" . 'elpy-nav-indent-shift-right)
+;;          ("M-[" . 'elpy-nav-indent-shift-left)))
 
 (use-package ess
   :defer t
@@ -324,14 +361,7 @@
          ("C-r" . 'swiper-backward)
          ("C-c C-r" . 'ivy-resume)))
 
-(use-package ivy-hydra
-  :defer t)
-
-;; (use-package smex)
-
-(use-package prescient)
-(use-package ivy-prescient
-  :config (ivy-prescient-mode))
+(use-package ivy-hydra)
 
 (defun counsel-locate-cmd-mdfind (input)
   "Return a shell command based on INPUT."
@@ -344,7 +374,7 @@
          ("C-c k" . 'counsel-ag)
          ("C-c g" . 'counsel-git)
          ("C-c i" . 'counsel-imenu)
-         ("C-c l" . 'counsel-locate)
+         ;; ("C-c l" . 'counsel-locate)
          ("C-c c" . 'counsel-org-capture)
          ("C-x b" . 'ivy-switch-buffer))
   :config
@@ -358,6 +388,16 @@
   (setq counsel-find-file-occur-cmd
         "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
+
+(use-package prescient
+  :config
+  (prescient-persist-mode))
+
+(use-package ivy-prescient
+  :config (ivy-prescient-mode))
+
+(use-package company-prescient
+  :config (company-prescient-mode))
 
 (use-package rust-mode
   :bind ( :map rust-mode-map
@@ -423,12 +463,16 @@
 (defun bibtex-pdf-open-function (fpath)
   (call-process "open" nil 0 nil "-a" "/Applications/Skim.app" fpath))
 
+(defun add-to-reading-list (keys &optional fallback-action)
+  (let ((link (bibtex-completion-format-citation-org-title-link-to-PDF keys)))
+    (kill-new link)
+    (org-capture nil "r")))
+    
 (use-package ivy-bibtex
   :bind*
   ("C-c C-r" . ivy-bibtex)
   :config
   (setq bibtex-completion-bibliography "~/org/bib.bib")
-  ;; (setq bibtex-completion-notes-path "~/org/reading-notes.org")
   (setq bibtex-completion-pdf-field "File")
   (setq bibtex-completion-pdf-open-function 'bibtex-pdf-open-function)
   (setq ivy-bibtex-default-action #'ivy-bibtex-insert-citation)
@@ -437,9 +481,9 @@
         '((org-mode      . bibtex-completion-format-citation-org-cite)
           (latex-mode    . bibtex-completion-format-citation-cite)
           (markdown-mode . bibtex-completion-format-citation-pandoc-citeproc)
-          (default       . bibtex-completion-format-citation-default))))
-  ;; (setf (alist-get 'org-mode bibtex-completion-format-citation-functions)
-        ;; 'bibtex-completion-format-citation-pandoc-citeproc))
+          (default       . bibtex-completion-format-citation-default)))
+  (ivy-bibtex-ivify-action add-to-reading-list ivy-bibtex-add-to-reading-list)
+  (ivy-add-actions 'ivy-bibtex '(("r" ivy-bibtex-add-to-reading-list "add to reading list"))))
 
 (defun counsel-bibtex-entry ()
   (interactive)
@@ -485,9 +529,8 @@
      (setkey counsel-projectile-switch-project-action-dired "D"))))
 
 (use-package avy
-  :bind (("C-;" . 'avy-goto-char)
-         ("C-\\" . 'avy-goto-line)
-         ("C-'" . 'avy-goto-word-1)))
+  :bind (("M-j" . 'avy-goto-char-timer)
+         ("C-\\" . 'avy-goto-line)))
 
 (use-package ace-window
   :config
@@ -523,6 +566,16 @@
   (setq ghub-use-workaround-for-emacs-bug 'force))
 
 (use-package vterm)
+
+;; (use-package julia-mode)
+
+;; (use-package julia-snail
+;;   :requires vterm
+;;   :hook (julia-mode . julia-snail-mode))
+
+;; (use-package lsp-julia
+;;   :config
+;;   (setq lsp-julia-default-environment "~/.julia/environments/v1.6"))
 
 (use-package terminal-here
   :config
@@ -600,7 +653,7 @@
 
 (add-hook 'org-agenda-finalize-hook
           (lambda ()
-          (highlight-regexp "^[[:blank:]]+\\+[0-9]+[md]" 'org-deadline-face)))
+            (highlight-regexp "^[[:blank:]]+\\+[0-9]+[md]" 'org-deadline-face)))
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Tasks")
@@ -610,7 +663,8 @@
          "* %^{Description} :meeting:\n%^t"
          :empty-lines 1)
         ("r" "Read" entry (file+headline "~/org/leeslijst.org" "Articles")
-         "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
+         ;; "* TODO %(clip-link-http-or-file)\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
+         "* TODO %c \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
          :empty-lines 1)
         ("n" "Note" entry (file+headline "~/org/inbox.org" "Notes")
          "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
@@ -792,14 +846,16 @@ _<f12>_ quit hydra
 (use-package org-roam-bibtex
   :hook (org-roam-mode . org-roam-bibtex-mode)
   :after org-roam)
-  ;; :config (require 'org-ref)
+  ;; :config (require 'org-ref))
   ;; (setq org-ref-default-bibliography '("~/org/bib.bib")))
 
-
-(use-package websocket)
-(use-package simple-httpd)
-(add-to-list 'load-path "~/.emacs.d/elisp/org-roam-ui")
-(load-library "org-roam-ui")
+(use-package org-roam-ui
+  :after org-roam
+  :config
+  (setq org-roam-ui-sync-theme t
+        org-roam-ui-follow t
+        org-roam-ui-update-on-save t
+        org-roam-ui-open-on-start nil))
 
 (use-package smerge-mode
   :defer t
@@ -858,4 +914,3 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 
 (when (file-exists-p custom-file)
   (load custom-file))
-(put 'narrow-to-region 'disabled nil)
