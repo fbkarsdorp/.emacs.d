@@ -13,13 +13,16 @@
                           ;; ("org" . "https://orgmode.org/elpa/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                          
-                            (font . "-*-Iosevka-normal-normal-normal-*-14-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Input Mono Narrow-normal-normal-condensed-*-14-*-*-*-m-0-iso10646-1")
                             (height . 58) (width . 219)))
-
 
 (setq frame-inhibit-implied-resize t)
 (setq initial-major-mode 'fundamental-mode)
 (setq initial-scratch-message "")
+
+;; Turn off swiping to switch buffers (defined in mac-win.el)
+(global-unset-key [swipe-left])
+(global-unset-key [swipe-right])
 
 ;; (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") nil 'prepend)
 (when (memq window-system '(mac ns x))
@@ -237,9 +240,9 @@
         modus-themes-syntax '(faint)
         )
   (setq modus-themes-org-agenda
-      '((header-date . (grayscale workaholic bold-today))
-        (scheduled . uniform)
-        (habit . traffic-light)))
+        '((header-date . (grayscale workaholic bold-today))
+          (scheduled . uniform)
+          (habit . traffic-light)))
   (modus-themes-load-themes)
   :config
   (modus-themes-load-operandi)
@@ -272,7 +275,6 @@
   :init
   (setq lsp-keymap-prefix "C-c l")
   :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-         ;; (julia-mode . lsp)
          (python-mode . lsp)
          ;; if you want which-key integration
          (lsp-mode . lsp-enable-which-key-integration))
@@ -296,7 +298,6 @@
                           (lsp))))  ; or lsp-deferred
 
 (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
-
 
 ;; (use-package elpy
 ;;   ;; :commands elpy-enable
@@ -467,6 +468,14 @@
   (let ((link (bibtex-completion-format-citation-org-title-link-to-PDF keys)))
     (kill-new link)
     (org-capture nil "r")))
+
+(defun show-pdf-in-finder (keys &optional fallback-action)
+  (let ((dir (file-name-directory (car (bibtex-completion-find-pdf (car keys))))))
+    (cond
+     ((> (length dir) 1)
+      (shell-command (concat "open " dir)))
+     (t
+      (message "No PDF(s) found for this entry: %s" key)))))
     
 (use-package ivy-bibtex
   :bind*
@@ -483,7 +492,9 @@
           (markdown-mode . bibtex-completion-format-citation-pandoc-citeproc)
           (default       . bibtex-completion-format-citation-default)))
   (ivy-bibtex-ivify-action add-to-reading-list ivy-bibtex-add-to-reading-list)
-  (ivy-add-actions 'ivy-bibtex '(("r" ivy-bibtex-add-to-reading-list "add to reading list"))))
+  (ivy-bibtex-ivify-action show-pdf-in-finder ivy-bibtex-show-pdf-in-finder)
+  (ivy-add-actions 'ivy-bibtex '(("r" ivy-bibtex-add-to-reading-list "add to reading list")))
+  (ivy-add-actions 'ivy-bibtex '(("F" ivy-bibtex-show-pdf-in-finder "show in finder"))))
 
 (defun counsel-bibtex-entry ()
   (interactive)
@@ -530,7 +541,7 @@
 
 (use-package avy
   :bind (("M-j" . 'avy-goto-char-timer)
-         ("C-\\" . 'avy-goto-line)))
+         ("M-\\" . 'avy-goto-line)))
 
 (use-package ace-window
   :config
@@ -567,15 +578,12 @@
 
 (use-package vterm)
 
-;; (use-package julia-mode)
+(use-package julia-mode)
 
-;; (use-package julia-snail
-;;   :requires vterm
-;;   :hook (julia-mode . julia-snail-mode))
-
-;; (use-package lsp-julia
-;;   :config
-;;   (setq lsp-julia-default-environment "~/.julia/environments/v1.6"))
+(use-package julia-snail
+  :ensure t
+  :requires vterm
+  :hook (julia-mode . julia-snail-mode))
 
 (use-package terminal-here
   :config
