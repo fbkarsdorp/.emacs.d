@@ -50,6 +50,10 @@
 (tooltip-mode -1)
 (fringe-mode 16) ;; I like a little more spacing
 
+;; tab-bar
+(setq tab-bar-mode t)
+(setq tab-bar-show nil)
+
 ;; Customizations
 (setq inhibit-startup-message t)
 (setq frame-title-format "")
@@ -238,6 +242,7 @@
         modus-themes-mode-line '(moody borderless)
         modus-themes-prompts '(background)
         modus-themes-syntax '(faint)
+        modus-themes-tabs-accented nil
         )
   (setq modus-themes-org-agenda
         '((header-date . (grayscale workaholic bold-today))
@@ -523,21 +528,49 @@
 (use-package projectile
   :diminish
   :config
-  (projectile-global-mode)
   (setq projectile-completion-system 'ivy)
   (setq projectile-switch-project-action #'projectile-dired)
-  :bind-keymap
-  ("C-c p" . projectile-command-map))
+  :bind (:map projectile-mode-map
+              ("C-c p" . projectile-command-map))
+  :init (projectile-mode +1))
+
+(defun projectile-name-tab-by-project-name-or-default ()
+  (let ((project-name (projectile-project-name)))
+    (if (string= "-" project-name)
+        (tab-bar-tab-name-current)
+      project-name)))
+
+(setq tab-bar-tab-name-function #'projectile-name-tab-by-project-name-or-default)
+
+(defun counsel-projectile-switch-project-action-dired-new-tab (project)
+  (let* ((project-name (file-name-nondirectory (directory-file-name project)))
+         (tab-bar-index (tab-bar--tab-index-by-name project-name)))
+    (if tab-bar-index
+        (tab-bar-select-tab (+ tab-bar-index 1))
+      (progn
+        (tab-bar-new-tab)
+        (let ((projectile-switch-project-action 'projectile-dired))
+          (counsel-projectile-switch-project-by-name project))))))
+
+(defun projectile-kill-buffers-and-enclosing-tab ()
+  (interactive)
+  (let* ((project-name (projectile-project-name))
+         (tab-bar-index (tab-bar--tab-index-by-name project-name)))
+    (when tab-bar-index
+      (projectile-kill-buffers)
+      (tab-bar-switch-to-recent-tab)
+      (tab-bar-close-tab (+ tab-bar-index 1)))))
 
 (use-package counsel-projectile
   :after projectile
+  :init (counsel-projectile-mode)
   :config
-  (counsel-projectile-mode)
   ;; I want projectile to open dired upon selecting a project. 
   (counsel-projectile-modify-action
    'counsel-projectile-switch-project-action
-   '((move counsel-projectile-switch-project-action-dired 1)
-     (setkey counsel-projectile-switch-project-action-dired "D"))))
+   '((add ("T" counsel-projectile-switch-project-action-dired-new-tab "open in new tab") 1)))
+  :bind (:map projectile-mode-map
+              ("C-c p k" . projectile-kill-buffers-and-enclosing-tab)))
 
 (use-package avy
   :bind (("M-j" . 'avy-goto-char-timer)
