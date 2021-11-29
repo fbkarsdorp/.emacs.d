@@ -53,6 +53,7 @@
 ;; tab-bar
 (setq tab-bar-mode t)
 (setq tab-bar-show nil)
+(global-set-key (kbd "C-x C-b") 'tab-bar-select-tab-by-name)
 
 ;; Customizations
 (setq inhibit-startup-message t)
