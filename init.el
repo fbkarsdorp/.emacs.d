@@ -57,7 +57,7 @@
 
 ;; Customizations
 (setq inhibit-startup-message t)
-(setq frame-title-format "")
+(setq frame-title-format '((:eval (format "%s" (cdr (assoc 'name (tab-bar--current-tab)))))))
 (show-paren-mode t)
 (blink-cursor-mode -1)
 (setq-default cursor-type 'hbar)
@@ -130,7 +130,7 @@
 (global-set-key (kbd "M-/") 'comment-current-line-dwim)
 (global-set-key (kbd "M-+")  'mode-line-other-buffer)
 (global-set-key (kbd "M-`") 'other-frame)
-(global-set-key (kbd "C-x C-b") 'ibuffer)
+;; (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "C-x k") 'kill-this-buffer)
 (global-set-key (kbd "C-x K") 'kill-buffer)
 
