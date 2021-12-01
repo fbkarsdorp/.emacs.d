@@ -475,6 +475,10 @@
     (kill-new link)
     (org-capture nil "r")))
 
+(defun read-on-remarkable (keys &optional fallback-action)
+  (let ((fpath (car (bibtex-completion-find-pdf (car keys)))))
+    (call-process "rmapi" nil 0 nil "put" fpath)))
+
 (defun show-pdf-in-finder (keys &optional fallback-action)
   (let ((dir (file-name-directory (car (bibtex-completion-find-pdf (car keys))))))
     (cond
@@ -499,8 +503,10 @@
           (default       . bibtex-completion-format-citation-default)))
   (ivy-bibtex-ivify-action add-to-reading-list ivy-bibtex-add-to-reading-list)
   (ivy-bibtex-ivify-action show-pdf-in-finder ivy-bibtex-show-pdf-in-finder)
+  (ivy-bibtex-ivify-action read-on-remarkable ivy-bibtex-read-on-remarkable)
   (ivy-add-actions 'ivy-bibtex '(("r" ivy-bibtex-add-to-reading-list "add to reading list")))
-  (ivy-add-actions 'ivy-bibtex '(("F" ivy-bibtex-show-pdf-in-finder "show in finder"))))
+  (ivy-add-actions 'ivy-bibtex '(("F" ivy-bibtex-show-pdf-in-finder "show in finder")))
+  (ivy-add-actions 'ivy-bibtex '(("M" ivy-bibtex-read-on-remarkable "read on remarkable"))))
 
 (defun counsel-bibtex-entry ()
   (interactive)
