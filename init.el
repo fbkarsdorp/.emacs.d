@@ -897,6 +897,7 @@ _<f12>_ quit hydra
   (setq org-roam-ui-sync-theme t
         org-roam-ui-follow t
         org-roam-ui-update-on-save t
+        org-roam-ui-browser-function #'browse-url-chromium
         org-roam-ui-open-on-start nil))
 
 (use-package smerge-mode
