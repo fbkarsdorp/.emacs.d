@@ -678,6 +678,9 @@
       org-refile-allow-creating-parent-nodes 'confirm
       org-refile-targets '((org-agenda-files :maxlevel . 2))
       org-refile-targets '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)"))
+      ;; images
+      org-image-actual-width (list 550)
+      org-format-latex-options (plist-put org-format-latex-options :scale 1.5)
       ;; Stylistics
       org-src-fontify-natively t
       org-hide-leading-stars nil
@@ -692,6 +695,7 @@
       org-cite-global-bibliography '("~/org/bib.bib")
       org-agenda-files (mapcar (lambda (f) (concat org-directory f))
                                '("/inbox.org" "/projects.org" "/habits.org" "/agenda.org" "/leeslijst.org")))
+
 
 (use-package org-cliplink
   :defer t
@@ -765,7 +769,7 @@
 (setq org-agenda-block-separator (propertize
                                   (make-string (frame-width) ?\u2594)
                                   'face '(:foreground "grey38"))
-      org-super-agenda-header-separator "\n"
+      org-super-agenda-header-separator ""
       org-habit-show-habits-only-for-today nil
       org-agenda-sticky t
       org-agenda-restore-windows-after-quit t
@@ -797,7 +801,7 @@
                   (org-super-agenda-groups
                    '((:discard (:scheduled t :date t))
                      (:auto-map (lambda (item)
-                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n")))
+                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)))))
                      (:discard (:anything t))))))
           (todo "TODO|NEXT"
                 ((org-agenda-overriding-header " Reading List")
@@ -806,7 +810,7 @@
                  (org-super-agenda-groups
                    '((:discard (:scheduled t))
                      (:auto-map (lambda (item)
-                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)) "\n")))
+                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)))))
                      (:discard (:anything t))))))))
 
         ("w" "Weekly review"
