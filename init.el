@@ -13,7 +13,7 @@
                           ;; ("org" . "https://orgmode.org/elpa/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                          
-                            (font . "-*-Input Mono Narrow-normal-normal-condensed-*-14-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Input Mono Condensed-medium-normal-condensed-*-13-*-*-*-m-0-iso10646-1")
                             (height . 58) (width . 219)))
 
 (setq frame-inhibit-implied-resize t)
