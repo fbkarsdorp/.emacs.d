@@ -45,7 +45,7 @@
 
 ;; GUI simplifications
 (tool-bar-mode -1)
-(menu-bar-mode -1)
+;; (menu-bar-mode -1)
 (scroll-bar-mode -1)
 (tooltip-mode -1)
 (fringe-mode 16) ;; I like a little more spacing
