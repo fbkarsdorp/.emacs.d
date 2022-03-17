@@ -250,22 +250,33 @@
   (setq modus-themes-bold-constructs t
         modus-themes-completions 'opionated
         modus-themes-diffs 'desaturated
-        modus-themes-headings '((t . section))
-        modus-themes-hl-line '(accented)
-        modus-themes-links '(no-underline)
+        modus-themes-headings '((1 . (overline 1.3))
+                                (2 . (rainbow 1.1))
+                                (3 . (1))
+                                (t . (monochrome)))
+        modus-themes-hl-line '(nil)
+        modus-themes-links '(nil)
         modus-themes-mixed-fonts nil
-        modus-themes-mode-line '(moody borderless)
+        modus-themes-mode-line '(moody borderless accented)
         modus-themes-prompts '(background)
+        modus-themes-region '(accented bg-only)
         modus-themes-syntax '(faint)
         modus-themes-tabs-accented nil
         )
   (setq modus-themes-org-agenda
         '((header-date . (grayscale workaholic bold-today))
+          (header-block . (1.5 semibold))
           (scheduled . uniform)
+          (event . (italic))
           (habit . traffic-light)))
+  ;(setq modus-themes-vivendi-color-overrides
+  ;      '((bg-main . "#202124")
+  ;        (bg-hl-line . "#303031")
+  ;        (fg-header . "#bdc1c6")
+  ;        (fg-main . "#bdc1c6")))
   (modus-themes-load-themes)
   :config
-  (modus-themes-load-operandi)
+  (modus-themes-load-vivendi)
   :bind ("<f5>" . modus-themes-toggle))
 
 (use-package minions
