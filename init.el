@@ -1001,6 +1001,21 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
                                    (when smerge-mode
                                      (smerge-hydra/body)))))
 
+(defhydra hydra-windows (:color red)
+  ("s" shrink-window-horizontally "shrink horizontally" :column "Sizing")
+  ("e" enlarge-window-horizontally "enlarge horizontally")
+  ("b" balance-windows "balance window height")
+  ("m" maximize-window "maximize current window")
+  ("M" minimize-window "minimize current window")
+  
+  ("h" split-window-below "split horizontally" :column "Split management")
+  ("v" split-window-right "split vertically")
+  ("d" delete-window "delete current window")
+  ("x" delete-other-windows "delete-other-windows")
+  ("q" nil "quit menu" :color blue :column nil))
+
+(global-set-key (kbd "M-n") 'hydra-windows/body)
+
 (use-package visual-regexp
   :bind (("C-c %" . vr/query-replace)
          ("C-c $" . vr/replace)))
