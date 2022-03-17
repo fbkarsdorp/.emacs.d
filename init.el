@@ -211,7 +211,7 @@
                ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
 (use-package ox-pandoc
-  :defer t)
+  :after org)
 
 (use-package csv-mode
   :defer t)
