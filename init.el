@@ -818,12 +818,25 @@
                 ((org-agenda-overriding-header "Overview of DONE tasks")
                  (org-agenda-archives-mode t)))))))
 
-(defun show-my-agenda ()
-  (interactive)
+(defun side-by-side-agenda-view ()
   (progn
     (org-agenda nil "d")
-    (org-agenda nil "p"))
-  (message "Agenda loaded"))
+    (org-agenda-redo)
+    (org-agenda nil "p")
+    (org-agenda-redo)))
+
+(defun show-my-agenda ()
+  (interactive)
+  (let ((tab-bar-index (tab-bar--tab-index-by-name "Agenda")))
+    (if tab-bar-index
+        (progn 
+          (tab-bar-select-tab (+ tab-bar-index 1))
+          (side-by-side-agenda-view))
+      (progn
+        (tab-bar-new-tab)
+        (tab-bar-rename-tab "Agenda")
+        (side-by-side-agenda-view)
+        (message "Agenda loaded")))))
 
 (define-key global-map "\C-ca" 'show-my-agenda)
 
