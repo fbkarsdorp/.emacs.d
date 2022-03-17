@@ -77,17 +77,12 @@
 (setq delete-old-versions t)
 (setq version-control t)
 (setq create-lockfiles nil)
+(setq pixel-scroll-precision-mode t) ;; new in Emacs 29
 
 (use-package hl-line
   :ensure nil
   :custom-face (hl-line ((t (:extend t))))
   :hook (after-init . global-hl-line-mode))
-
-;; (use-package hl-line+
-;;   :load-path "elisp"
-;;   :config
-;;   (hl-line-when-idle-interval 0.3)
-;;   (toggle-hl-line-when-idle 1))
 
 (defun xah-unfill-paragraph ()
   (interactive)
