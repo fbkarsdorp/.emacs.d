@@ -132,14 +132,33 @@
 (global-auto-revert-mode t)
 (add-hook 'text-mode-hook #'auto-fill-mode)
 
+(defun open-kaartenbak ()
+  (interactive)
+  (let ((tab-bar-index (tab-bar--tab-index-by-name "Kaartenbak")))
+    (if tab-bar-index
+        (tab-bar-switch-to-tab (+ tab-bar-index 1))
+      (progn
+        (tab-bar-new-tab)
+        (tab-bar-rename-tab "Kaartenbak")
+        (find-file "~/kaartenbak/20210727213932-kaartenbak.org")))))
+
 (defun new-scratch-pad ()
   "Create a new org-mode buffer for random stuff."
   (interactive)
-  (let ((buffer (generate-new-buffer "*org-scratch*")))
-    (switch-to-buffer buffer)
-    (setq buffer-offer-save t)
-    (org-mode)
-    buffer))
+  (let ((tab-bar-index (tab-bar--tab-index-by-name "Kladblok")))
+    (if tab-bar-index
+        (progn
+          (tab-bar-select-tab (+ tab-bar-index 1))
+          (switch-to-buffer "kladblok")
+          (olivetti-mode t))
+      (progn
+        (tab-bar-new-tab)
+        (tab-bar-rename-tab "Kladblok")
+        (let ((buffer (generate-new-buffer "kladblok")))
+          (switch-to-buffer buffer)
+          (setq buffer-offer-save t)
+          (org-mode)
+          (olivetti-mode t))))))
 
 (global-set-key (kbd "C-c s") 'new-scratch-pad)
 
