@@ -948,6 +948,19 @@ _<f12>_ quit hydra
         org-roam-ui-browser-function #'browse-url-chromium
         org-roam-ui-open-on-start nil))
 
+(use-package jupyter
+  :after org
+  :config
+  (setq org-babel-python-command "python3")
+  (org-babel-do-load-languages 'org-babel-load-languages '((jupyter . t)))
+  ;; default args for jupyter-python
+  (setq org-babel-default-header-args:jupyter-python
+        '((:results . "replace")
+          (:async . "yes")
+          (:session . "py")
+          (:kernel . "python3")))
+  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
+
 (use-package smerge-mode
   :defer t
   :config
