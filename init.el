@@ -23,6 +23,10 @@
 ;; Turn off swiping to switch buffers (defined in mac-win.el)
 (global-unset-key [swipe-left])
 (global-unset-key [swipe-right])
+(global-unset-key (kbd "C-<mouse-4>"))
+(global-unset-key (kbd "C-<mouse-5>"))
+(global-unset-key (kbd "C-<wheel-down>"))
+(global-unset-key (kbd "C-<wheel-up>"))
 
 ;; (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") nil 'prepend)
 (when (memq window-system '(mac ns x))
@@ -210,8 +214,18 @@
                ("\\paragraph{%s}" . "\\paragraph*{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
-(use-package ox-pandoc
+(use-package pandoc-mode
   :after org)
+
+(use-package ox-hugo
+  :config
+  (require 'oc-csl)
+  (setq org-hugo-base-dir "~/local/folgertk/")
+  (setq org-hugo--preprocess-buffer nil)
+  (setq org-hugo-auto-set-lastmod t)
+  (setq org-cite-csl-styles-dir "~/Zotero/styles")
+  (setq org-cite-export-processors '((t csl)))
+  :after ox)
 
 (use-package csv-mode
   :defer t)
@@ -248,7 +262,9 @@
 (use-package modus-themes
   :init
   (setq modus-themes-bold-constructs t
-        modus-themes-completions 'opionated
+        modus-themes-completions '((matches . (extrabold intense background))
+                                   (selection . (semibold accented intense))
+                                   (popup . (accented)))
         modus-themes-diffs 'desaturated
         modus-themes-headings '((1 . (overline 1.3))
                                 (2 . (rainbow 1.1))
@@ -269,14 +285,9 @@
           (scheduled . uniform)
           (event . (italic))
           (habit . traffic-light)))
-  ;(setq modus-themes-vivendi-color-overrides
-  ;      '((bg-main . "#202124")
-  ;        (bg-hl-line . "#303031")
-  ;        (fg-header . "#bdc1c6")
-  ;        (fg-main . "#bdc1c6")))
   (modus-themes-load-themes)
   :config
-  (modus-themes-load-vivendi)
+  (modus-themes-load-operandi)
   :bind ("<f5>" . modus-themes-toggle))
 
 (use-package minions
@@ -529,7 +540,7 @@
   (ivy-bibtex-ivify-action add-to-reading-list ivy-bibtex-add-to-reading-list)
   (ivy-bibtex-ivify-action show-pdf-in-finder ivy-bibtex-show-pdf-in-finder)
   (ivy-bibtex-ivify-action read-on-remarkable ivy-bibtex-read-on-remarkable)
-  (ivy-add-actions 'ivy-bibtex '(("r" ivy-bibtex-add-to-reading-list "add to reading list")))
+  (ivy-add-actions 'ivy-bibtex '(("R" ivy-bibtex-add-to-reading-list "add to reading list")))
   (ivy-add-actions 'ivy-bibtex '(("F" ivy-bibtex-show-pdf-in-finder "show in finder")))
   (ivy-add-actions 'ivy-bibtex '(("M" ivy-bibtex-read-on-remarkable "read on remarkable"))))
 
@@ -671,9 +682,11 @@
 
 (setq org-directory "~/org"
       org-default-notes-file (concat org-directory "/notes.org")
-      org-todo-keywords '((sequence "TODO" "NEXT" "WAITING" "|" "DONE" "CANCELLED" "HOLD"))
+      org-todo-keywords '((sequence "TODO" "WAITING" "|" "DONE" "CANCELLED"))
+      org-deadline-warning-days 2
       ;; Refiling customizations
       org-refile-use-outline-path 'file
+      org-highlight-latex-and-related '(native script)
       org-outline-path-complete-in-steps nil
       org-refile-allow-creating-parent-nodes 'confirm
       org-refile-targets '((org-agenda-files :maxlevel . 2))
@@ -725,12 +738,12 @@
                       (org-entry-get (or pos (point)) "DEADLINE" t))
                      (current-time)))))
 
-(defface org-deadline-face '((t (:inherit (font-lock-comment-face))))
-  "org-deadline-face")
+;; (defface org-deadline-face '((t (:inherit (font-lock-comment-face))))
+;;   "org-deadline-face")
 
-(add-hook 'org-agenda-finalize-hook
-          (lambda ()
-            (highlight-regexp "^[[:blank:]]+\\+[0-9]+[md]" 'org-deadline-face)))
+;; (add-hook 'org-agenda-finalize-hook
+;;           (lambda ()
+;;             (highlight-regexp "^[[:blank:]]+\\+[0-9]+[md]" 'org-deadline-face)))
 
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Tasks")
@@ -840,7 +853,7 @@
 
 (define-key global-map "\C-ca" 'show-my-agenda)
 
-;; Functions to keep alendar in sight when working on the agenda
+;; Functions to keep calendar in sight when working on the agenda
 (defun fk-window-displaying-agenda-p (window)
   (equal (with-current-buffer (window-buffer window) major-mode)
          'org-agenda-mode)) 
@@ -955,10 +968,18 @@ _<f12>_ quit hydra
   (org-babel-do-load-languages 'org-babel-load-languages '((jupyter . t)))
   ;; default args for jupyter-python
   (setq org-babel-default-header-args:jupyter-python
+        ;; NOTE: ofr converting Python Dataframes into org tables, I'm using code from
+        ;; https://github.com/gregsexton/ob-ipython/blob/7147455230841744fb5b95dcbe03320313a77124/README.org#tips-and-tricks
+        ;; which I put in .ipython/profile_default/startup/orgtable.py as a startup file for ipython. 
         '((:results . "replace")
           (:async . "yes")
           (:session . "py")
           (:kernel . "python3")))
+  (setq org-babel-default-header-args:jupyter-R
+        '((:results . "replace")
+          (:async . "yes")
+          (:session . "R")
+          (:kernel . "R")))
   (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
 
 (use-package smerge-mode
