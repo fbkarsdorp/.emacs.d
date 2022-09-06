@@ -8,12 +8,12 @@
 (setq package-archives (append
 			package-archives
 			'(("melpa" . "https://melpa.org/packages/")
-                          ("elpy" . "http://jorgenschaefer.github.io/packages/")
+                          ;; ("elpy" . "http://jorgenschaefer.github.io/packages/")
                           ("elpa" . "https://elpa.nongnu.org/nongnu/"))))
                           ;; ("org" . "https://orgmode.org/elpa/"))))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                          
-                            (font . "-*-Input Mono Condensed-medium-normal-condensed-*-13-*-*-*-m-0-iso10646-1")
+                            (font . "-*-Input Mono Condensed-medium-normal-condensed-*-11-*-*-*-m-0-iso10646-1")
                             (height . 58) (width . 219)))
 
 (setq frame-inhibit-implied-resize t)
@@ -59,7 +59,7 @@
 (setq tab-bar-show nil)
 (global-set-key (kbd "C-x C-b") 'tab-bar-select-tab-by-name)
 
-;; Customizations
+;; ;; Customizations
 (setq inhibit-startup-message t)
 (setq frame-title-format '((:eval (format "%s" (cdr (assoc 'name (tab-bar--current-tab)))))))
 (show-paren-mode t)
@@ -93,17 +93,14 @@
   (let ((fill-column most-positive-fixnum))
     (fill-paragraph)))
 
-(use-package dired-subtree
-  :after dired
-  :config
-  (setq dired-subtree-use-backgrounds nil)
-  :bind (:map dired-mode-map ("<tab>" . dired-subtree-toggle)))
-
 ;; Dired configurations
-(add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1)))
+;; (add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1)))
 ;; (setq dired-listing-switches "-Ahl  --group-directories-first")
+(when (string= system-type "darwin")       
+  (setq dired-use-ls-dired nil))
+
 (setq dired-recursive-deletes 'always)
-;; (setq insert-directory-program "gls" dired-use-ls-dired t)
+(setq insert-directory-program "gls" dired-use-ls-dired t)
 
 ;; use async where possible
 (use-package async
@@ -223,6 +220,10 @@
   (setq org-hugo-base-dir "~/local/folgertk/")
   (setq org-hugo--preprocess-buffer nil)
   (setq org-hugo-auto-set-lastmod t)
+  ;; From the docs: "By default, ox-hugo will insert a Markdown heading with the
+  ;; string defined in org-hugo-pandoc-cite-references-heading [...]". By setting it to
+  ;; an empty string, we prevent that, which helps exporting to other formats.
+  ;; (plist-put org-hugo-citations-plist :bibliography-section-heading "")
   (setq org-cite-csl-styles-dir "~/Zotero/styles")
   (setq org-cite-export-processors '((t csl)))
   :after ox)
@@ -266,7 +267,7 @@
                                    (selection . (semibold accented intense))
                                    (popup . (accented)))
         modus-themes-diffs 'desaturated
-        modus-themes-headings '((1 . (overline 1.3))
+        modus-themes-headings '((1 . (1.2))
                                 (2 . (rainbow 1.1))
                                 (3 . (1))
                                 (t . (monochrome)))
@@ -289,6 +290,11 @@
   :config
   (modus-themes-load-operandi)
   :bind ("<f5>" . modus-themes-toggle))
+
+;; (use-package ef-themes
+;;   :config
+;;   (mapc #'disable-theme custom-enabled-themes)
+;;   (load-theme 'ef-summer :no-confirm))
 
 (use-package minions
   :config (minions-mode 1))
@@ -340,6 +346,9 @@
                           (lsp))))  ; or lsp-deferred
 
 (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+
+(use-package pyvenv
+  :init (setenv "WORKON_HOME" "~/.virtualenvs/"))
 
 ;; (use-package elpy
 ;;   ;; :commands elpy-enable
@@ -593,7 +602,8 @@
       (progn
         (tab-bar-new-tab)
         (let ((projectile-switch-project-action 'projectile-dired))
-          (counsel-projectile-switch-project-by-name project))))))
+          (counsel-projectile-switch-project-by-name project))
+        (dirvish-side)))))
 
 (defun projectile-kill-buffers-and-enclosing-tab ()
   (interactive)
@@ -644,6 +654,8 @@
          ("C-c m" . vr/mc-mark)))
 
 (use-package magit
+  :config
+  (setq magit-git-executable "/usr/bin/git")
   :bind (("C-x g" . magit-status)
          ("C-c M-g" . magit-file-popup)))
 
@@ -652,27 +664,12 @@
   :config
   (setq ghub-use-workaround-for-emacs-bug 'force))
 
-(use-package vterm)
-
-(use-package julia-mode)
-
-(use-package julia-snail
-  :ensure t
-  :requires vterm
-  :hook (julia-mode . julia-snail-mode))
-
 (use-package terminal-here
   :config
   (setq terminal-here-mac-terminal-command 'iterm2))
 
 (use-package gitignore-templates
   :defer t)
-
-(use-package org-fancy-priorities
-  :hook
-  (org-mode . org-fancy-priorities-mode)
-  :config
-  (setq org-fancy-priorities-list '("" "" "")))
 
 (define-key global-map "\C-ca" 'org-agenda)
 ;; remove ^ for refile searches
@@ -682,7 +679,7 @@
 
 (setq org-directory "~/org"
       org-default-notes-file (concat org-directory "/notes.org")
-      org-todo-keywords '((sequence "TODO" "WAITING" "|" "DONE" "CANCELLED"))
+      org-todo-keywords '((sequence "TODO" "WAITING" "RESCHEDULE" "|" "DONE" "CANCELLED"))
       org-deadline-warning-days 2
       ;; Refiling customizations
       org-refile-use-outline-path 'file
@@ -703,6 +700,7 @@
       org-latex-create-formula-image-program 'dvisvgm
       org-confirm-babel-evaluate nil
       org-enforce-todo-dependencies t
+      org-latex-default-class "tufte-handout"
       org-log-done 'time
       org-log-into-drawer t
       org-cite-global-bibliography '("~/org/bib.bib")
@@ -738,13 +736,6 @@
                       (org-entry-get (or pos (point)) "DEADLINE" t))
                      (current-time)))))
 
-;; (defface org-deadline-face '((t (:inherit (font-lock-comment-face))))
-;;   "org-deadline-face")
-
-;; (add-hook 'org-agenda-finalize-hook
-;;           (lambda ()
-;;             (highlight-regexp "^[[:blank:]]+\\+[0-9]+[md]" 'org-deadline-face)))
-
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Tasks")
          "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
@@ -777,7 +768,18 @@
     :hook (org-agenda-mode . origami-mode)))
 
 (use-package org-download)
-(use-package org-pomodoro :after 'org)
+
+(defun my-agenda-indentation ()
+  (format "%s" (my-agenda-indent-string (org-current-level))))
+
+(defun my-agenda-indent-string (level)
+  (if (= level 1)
+      ""
+    (let ((str ""))
+      (while (> level 2)
+        (setq level (1- level)
+              str (concat str "  ")))
+      str)))
 
 (setq org-agenda-block-separator (propertize
                                   (make-string (frame-width) ?\u2594)
@@ -787,8 +789,7 @@
       org-agenda-sticky t
       org-agenda-restore-windows-after-quit t
       org-agenda-show-future-repeats nil
-      org-agenda-span 'week
-      org-agenda-start-on-weekday nil
+      org-agenda-start-on-weekday 1 ;; nil
       org-agenda-skip-deadline-prewarning-if-scheduled t
       org-agenda-skip-scheduled-if-done t
       org-agenda-skip-deadline-if-done t
@@ -799,17 +800,19 @@
          ((agenda ""
                   ((org-agenda-overriding-header " Planner")
                    (org-agenda-prefix-format '((agenda . " %?-12t")))
+                   (org-agenda-span 'week)
+                   (org-deadline-warning-days 0)
                    (org-super-agenda-groups
                     '((:name "" :time-grid t :scheduled t :deadline t :category "verjaardag")
                       (:discard (:anything t))))))))
         ("p" "Project backlog"
           ((todo "TODO|NEXT|WAITING|HOLD"
                 ((org-agenda-overriding-header " Inbox\n")
-                 (org-agenda-prefix-format " %?(org-deadline-ahead) ")
+                 (org-agenda-prefix-format "  %(my-agenda-indentation)")
                  (org-agenda-files '("~/org/inbox.org"))))
           (todo "TODO|NEXT|WAITING|HOLD"
                  ((org-agenda-overriding-header " Project TODOs")
-                  (org-agenda-prefix-format " %?(org-deadline-ahead) ")
+                  (org-agenda-prefix-format "  ")
                   (org-agenda-files '("~/org/projects.org"))
                   (org-super-agenda-groups
                    '((:discard (:scheduled t :date t))
@@ -818,12 +821,15 @@
                      (:discard (:anything t))))))
           (todo "TODO|NEXT"
                 ((org-agenda-overriding-header " Reading List")
-                 (org-agenda-prefix-format " %?(org-deadline-ahead) ")
+                 (org-agenda-prefix-format "  ")
                  (org-agenda-files '("~/org/leeslijst.org"))
                  (org-super-agenda-groups
-                   '((:discard (:scheduled t))
-                     (:auto-map (lambda (item)
-                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)))))
+                  '((:discard (:scheduled t))
+                    (:name " Priority A reading" :priority "A")
+                    (:name " Priority B reading" :priority "B")
+                    (:name " Priority C reading" :priority "C")
+                     ;; (:auto-map (lambda (item)
+                     ;;    (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)))))
                      (:discard (:anything t))))))))
 
         ("w" "Weekly review"
@@ -833,10 +839,12 @@
 
 (defun side-by-side-agenda-view ()
   (progn
-    (org-agenda nil "d")
+    (org-agenda nil "a")
     (org-agenda-redo)
     (org-agenda nil "p")
-    (org-agenda-redo)))
+    (org-agenda-redo)
+    (switch-to-buffer-other-window "*Org Agenda(a)*")
+    (calendar)))
 
 (defun show-my-agenda ()
   (interactive)
@@ -851,7 +859,7 @@
         (side-by-side-agenda-view)
         (message "Agenda loaded")))))
 
-(define-key global-map "\C-ca" 'show-my-agenda)
+(define-key global-map (kbd "C-c M-a") 'show-my-agenda)
 
 ;; Functions to keep calendar in sight when working on the agenda
 (defun fk-window-displaying-agenda-p (window)
@@ -861,15 +869,19 @@
 (defun fk-position-calendar-buffer (buffer alist)
   (let ((agenda-window (car (remove-if-not #'fk-window-displaying-agenda-p (window-list)))))
     (when agenda-window
-      (let ((desired-window (split-window agenda-window nil 'below)))
-        (set-window-buffer desired-window  buffer)
-        desired-window))))
+      (if (not (get-buffer-window "*Calendar*")) ;; don't create a new split if calendar is already there.
+          (let ((desired-window (split-window agenda-window nil 'below)))
+            (set-window-buffer desired-window buffer)
+            desired-window)))))
 
 (add-to-list 'display-buffer-alist (cons "\\*Calendar\\*" (cons #'fk-position-calendar-buffer nil)))
 
 (add-hook 'org-agenda-mode-hook 'org-super-agenda-mode)
+
+(add-to-list 'load-path (expand-file-name "org-mac-link" "~/.emacs.d/gitrepos"))
+(require 'org-mac-link)
 (add-hook 'org-mode-hook (lambda ()
-  (define-key org-mode-map (kbd "C-c g") 'org-mac-grab-link)))
+  (define-key org-mode-map (kbd "C-c g") 'org-mac-link-get-link)))
 
 (org-add-link-type "message" 'org-mac-message-open)
 
@@ -880,45 +892,6 @@
   (browse-url (concat "message://%3c" (substring message-id 2) "%3e")))
 
 (use-package fontawesome)
-
-(defhydra hydra-dired (:hint nil)
-  "
-^Operate^       ^View^                       ^Navigate^         ^Mark^
-^-------^------ ^----^---------------------- ^--------^-------- ^----^-----------
-_D_: delete     _RET_ open file              _P_: Up dir        _m_: mark
-_C_: copy       _o_ in other window          _n_: next line     _t_: toggle marks
-_R_: rename     _co_ display in other window _p_: previous line _u_: unmark
-_Z_: compress   _v_ view this file           _(_: show details  _U_: unmark all
-_+_: create dir _=_ view diff                ^^                 ^^
-^^              ^^                           ^^                 ^^
-_<f12>_ quit hydra
-"
-  ;; Operate
-  ("D" dired-do-delete)
-  ("C" dired-do-copy)
-  ("R" dired-do-rename)
-  ("Z" dired-do-compress)
-  ("+" dired-create-directory)
-  ;; View
-  ("RET" dired-find-file)
-  ("o" dired-find-file-other-window :exit t)
-  ("co" dired-display-file)
-  ("v" dired-view-file)
-  ("=" diredp-ediff)
-  ;; Navigate
-  ("P" dired-up-directory)
-  ("n" dired-next-line)
-  ("p" dired-previous-line)
-  ("(" dired-hide-details-mode)
-  ;; Mark
-  ("m" dired-mark)
-  ("t" dired-toggle-marks)
-  ("u" dired-unmark)
-  ("U" dired-unmark-all-marks)
-  ;; quit hydra
-  ("<f12>" nil :color blue))
-
-(define-key dired-mode-map (kbd "<f12>") 'hydra-dired/body)
 
 (use-package org-roam
   :init 
@@ -939,6 +912,7 @@ _<f12>_ quit hydra
   (setq org-roam-db-gc-threshold (* 10 1024 1024))
   ;; If using org-roam-protocol
   (require 'org-roam-protocol)
+  (require 'org-roam-export) ;; check whether this helps exporting
   (setq org-roam-dailies-directory "daily/")
   (setq org-roam-dailies-capture-templates
       '(("d" "default" entry
@@ -982,46 +956,6 @@ _<f12>_ quit hydra
           (:kernel . "R")))
   (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
 
-(use-package smerge-mode
-  :defer t
-  :config
-  (defhydra smerge-hydra
-    (:color pink :hint nil :post (smerge-auto-leave))
-    "
-^Move^       ^Keep^               ^Diff^                 ^Other^
-^^-----------^^-------------------^^---------------------^^-------
-_n_ext       _b_ase               _<_: upper/base        _C_ombine
-_p_rev       _u_pper              _=_: upper/lower       _r_esolve
-^^           _l_ower              _>_: base/lower        _k_ill current
-^^           _a_ll                _R_efine
-^^           _RET_: current       _E_diff
-"
-    ("n" smerge-next)
-    ("p" smerge-prev)
-    ("b" smerge-keep-base)
-    ("u" smerge-keep-upper)
-    ("l" smerge-keep-lower)
-    ("a" smerge-keep-all)
-    ("RET" smerge-keep-current)
-    ("\C-m" smerge-keep-current)
-    ("<" smerge-diff-base-upper)
-    ("=" smerge-diff-upper-lower)
-    (">" smerge-diff-base-lower)
-    ("R" smerge-refine)
-    ("E" smerge-ediff)
-    ("C" smerge-combine-with-next)
-    ("r" smerge-resolve)
-    ("k" smerge-kill-current)
-    ("ZZ" (lambda ()
-            (interactive)
-            (save-buffer)
-            (bury-buffer))
-     "Save and bury buffer" :color blue)
-    ("q" nil "cancel" :color blue))
-  :hook (magit-diff-visit-file . (lambda ()
-                                   (when smerge-mode
-                                     (smerge-hydra/body)))))
-
 (defhydra hydra-windows (:color red)
   ("s" shrink-window-horizontally "shrink horizontally" :column "Sizing")
   ("e" enlarge-window-horizontally "enlarge horizontally")
@@ -1043,6 +977,56 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
 
 (use-package visual-regexp-steroids
   :after visual-regexp)
+
+(use-package org-tree-slide
+  :config
+  (setq org-tree-slide-header t))
+
+(use-package all-the-icons)
+
+(use-package dirvish
+  :init
+  (dirvish-override-dired-mode)
+  :custom
+  (dirvish-quick-access-entries
+   '(("h" "~/"                          "Home")
+     ("d" "~/.emacs.d/"                 "Emacs")
+     ("p" "~/projects"                  "Projects")
+     ("t" "~/.local/share/Trash/files/" "TrashCan")))
+  (dirvish-mode-line-format
+   '(:left (sort file-time " " file-size symlink) :right (omit yank index)))
+  ;; Don't worry, Dirvish is still performant even you enable all these attributes
+  (dirvish-attributes '(all-the-icons collapse subtree-state vc-state git-msg))
+  :config
+  (setq dired-dwim-target t)
+  (setq delete-by-moving-to-trash t)
+  ;; Enable mouse drag-and-drop files to other applications
+  (setq dired-mouse-drag-files t)                   ; added in Emacs 29
+  (setq mouse-drag-and-drop-region-cross-program t) ; added in Emacs 29
+  (setq dired-listing-switches
+        "-l --almost-all --human-readable --time-style=long-iso --group-directories-first --no-group")
+  :bind
+  ;; Bind `dirvish|dirvish-side|dirvish-dwim' as you see fit
+  (("C-c f" . dirvish-fd)
+   ;; Dirvish has all the keybindings in `dired-mode-map' already
+   :map dirvish-mode-map
+   ("a"   . dirvish-quick-access)
+   ("f"   . dirvish-file-info-menu)
+   ("y"   . dirvish-yank-menu)
+   ("N"   . dirvish-narrow)
+   ("^"   . dirvish-history-last)
+   ("h"   . dirvish-history-jump) ; remapped `describe-mode'
+   ("s"   . dirvish-quicksort)    ; remapped `dired-sort-toggle-or-edit'
+   ("v"   . dirvish-vc-menu)      ; remapped `dired-view-file'
+   ("TAB" . dirvish-subtree-toggle)
+   ("M-f" . dirvish-history-go-forward)
+   ("M-b" . dirvish-history-go-backward)
+   ("M-l" . dirvish-ls-switches-menu)
+   ("M-m" . dirvish-mark-menu)
+   ("M-t" . dirvish-layout-toggle)
+   ("M-s" . dirvish-setup-menu)
+   ("M-e" . dirvish-emerge-menu)
+   ("M-j" . dirvish-fd-jump)))
 
 (use-package server
   :config
