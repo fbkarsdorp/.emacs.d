@@ -1,48 +1,134 @@
+#+TITLE: My Literate Emacs Configuration
+#+AUTHOR: Folgert Karsdorp
+#+filetags: :emacs:org-mode:python:jupyter:gtd:
+#+property: header-args :tangle (if (member "INACTIVE" (org-get-tags)) "no" "~/.emacs.d/init.el")
+
+* What's this?
+
+This document is a literate version of my GNU Emacs configuration written in Org mode. Org
+mode is a kind of markdown with super powers, which allows you to write code side by side
+with the corresponding documentation. My Emacs configuration is the result of certainly
+years and years of tinkering and refinement, and there is always something that could be
+just a little bit better or different so that it fits my workflow better. Here's a
+screenshot of my current setup:
+
+#+DOWNLOADED: file:/Users/folgert/Desktop/Screenshot 2022-12-21 at 16.30.30.png @ 2022-12-21 16:30:53
+[[file:What's_this?/2022-12-21_16-30-53_Screenshot 2022-12-21 at 16.30.30.png]]
+
+* Startup
+#+begin_src emacs-lisp :epilogue (format-time-string ";; Last generated on %c")
 ;;; -*- lexical-binding: t -*-
 ;;; init.el --- This is where all emacs start.
+#+end_src
 
+Set garbage collection memory threshold to some large number to improve the speed of
+loading the configuration. Not sure it really makes that much of a difference, but most
+people seem to do this.
+
+#+begin_src emacs-lisp
 (setq gc-cons-threshold 100000000) 
 (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
+#+end_src
 
+Don't show the startup message
+#+begin_src emacs-lisp
 (setq inhibit-startup-message t)
+#+end_src
 
+** Encoding
+Set the encoding to UTF8:
+
+#+begin_src emacs-lisp
 (prefer-coding-system 'utf-8)
+#+end_src
 
+** Path
+
+Ensure defined paths in the terminal are also visible to Emacs. Aparently, this is a macOS
+thing:
+
+#+begin_src emacs-lisp
 (when (memq window-system '(mac ns x))
   (setq exec-path-from-shell-arguments nil)
   (exec-path-from-shell-initialize))
+#+end_src
 
+* Package management
+For installing Emacs packages, I use MELPA, the Milkypostman’s Emacs Lisp Package Archive.
+In the future, I might switch over to straight, which clones packages directly from git,
+for for the moment (and the past 15 years or so), MELPA has been working just fine.
+
+#+begin_src emacs-lisp
 (setq load-prefer-newer t)
 (package-initialize)
 (setq package-archives (append
 			package-archives
 			'(("melpa" . "https://melpa.org/packages/")
                           ("elpa" . "https://elpa.nongnu.org/nongnu/"))))
+#+end_src
 
+The ~use-package~ macro by John Wiegley greatly improves the readability, configurability,
+uniformity, and maintainability of third-party packages. Additionaly, I use
+~quelpa-use-package~, which allows you to install packages from some git host using
+use-package. 
+
+#+begin_src emacs-lisp
 (eval-when-compile
   (require 'use-package)
   (require 'quelpa-use-package))
 (setq use-package-always-ensure t)
 (require 'bind-key)
+#+end_src
 
+The ~async~ package lets you install packages asynchronously. Quite useful to speed up
+installation of packages.
+
+#+begin_src emacs-lisp
 (use-package async
   :config (setq async-bytecomp-package-mode 1))
+#+end_src
 
+* Aesthetics
+** Interface components
+Frames should have transparent title bars and must have dimensions 58x291.
+
+#+begin_src emacs-lisp
 (setq default-frame-alist '((ns-transparent-titlebar . t)
                             (height . 48) (width . 159)))
+#+end_src
 
+Emacs' GUI has a number of modes enabled, such as toolbar mode, which I never use. Like
+most Emacs users, I always turn it off:
+
+#+begin_src emacs-lisp
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (tooltip-mode -1)
+#+end_src
 
+I also set the fringe a little wider to ensure the text isn't too close to the window
+border:
+
+#+begin_src emacs-lisp
 (fringe-mode 16)
+#+end_src
 
+Use a non-blinking horizontal line as cursor. I like the minimal look:
+
+#+begin_src emacs-lisp
 (blink-cursor-mode nil)
 (setq-default cursor-type 'hbar)
+#+end_src
 
+#+begin_src emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
 (setq ring-bell-function 'ignore)
+#+end_src
 
+The modeline in Emacs displays all information about your files, buffers, and active
+modes. The ~moody~ and ~minions~ packages simplify the modeline a bit. 
+
+#+begin_src emacs-lisp
 (use-package moody
   :config
   (setq x-underline-at-descent-line t)
@@ -51,17 +137,44 @@
 
 (use-package minions
   :config (minions-mode 1))
+#+end_src
 
+The package diminish helps to de-clutter the modeline.
+
+#+begin_src emacs-lisp
 (use-package diminish)
+#+end_src
 
+Emacs's tab-bar-mode is great to keep you buffers organized. It's a bit different from
+tabs in Firefox or other popular text editors, as it provides tabs for collections
+windows, rather than a single window.
+
+#+begin_src emacs-lisp
 (setq tab-bar-mode t)
 (setq tab-bar-show nil)
 (setq frame-title-format '((:eval (format "%s" (cdr (assoc 'name (tab-bar--current-tab)))))))
+#+end_src
 
+** Theming
+Endless fiddling with different themes is not the most productive activity. And yet, the
+visual appeal of your working environment should not be underestimated either. I find that
+it helps to maintain my appreciation for Emacs if I occasionally give the editor a visual
+update. Emacs comes with many built-in color themes. Whenever switching between them, it's
+important to make sure all settings are cleared instead of layering them. The following
+advice function takes care of that automatically when loading another theme:
+
+#+begin_src emacs-lisp
 (defadvice load-theme (before clear-previous-themes activate)
   "Clear existing theme settings instead of layering them"
   (mapc #'disable-theme custom-enabled-themes))
+#+end_src
 
+The color themes of Protesilaos Stavrou are unmatched. I usually use his
+modus-themes (prefering modus operandi during the day) but have recently become a fan of
+the ef-themes as well. Modus-themes let you customize almost every aspect of the theme, so
+please check out the documentation. Here's my config:
+
+#+begin_src emacs-lisp
 (use-package modus-themes
   :init
   (setq modus-themes-bold-constructs t
@@ -93,14 +206,39 @@
   :config
   (modus-themes-load-operandi)
   :bind ("<f5>" . modus-themes-toggle))
+#+end_src
 
+** Typography
+We first set the default font. 
+
+#+begin_src emacs-lisp
 (set-face-attribute 'default nil :family "Input Mono Compressed" :height 120)
+#+end_src
 
+Then, set the fill column to a maximum of 90 characters (10 more than the default).
+
+#+begin_src emacs-lisp
 (setq-default fill-column 90)
+#+end_src
 
+A number of packages rely on icons for presentation purposes. We load the ~fontawesome~
+and ~all-the-icons~ packages, which provide a large number of icons.
+
+#+begin_src emacs-lisp
 (use-package fontawesome)
 (use-package all-the-icons)
+#+end_src
 
+* Completion
+Emacs has endless functions. To quickly and efficiently find the functionality you're
+looking for, several completion frameworks have been developed. I have long been using
+[[https://github.com/abo-abo/swiper][Ivy]], a generic completion system for Emacs. Together with its companion Counsel ("a
+collection of Ivy-enhanced versions of common Emacs commands") and Swiper ("an
+Ivy-enhanced alternative to Isearch."), Ivy provides an environment with which you can
+quickly navigate, select and filter commands. The configuration of Ivy is nothing special.
+I bind search to ~C-s~ and adjust the regex building function for ivy-bibtex.
+
+#+begin_src emacs-lisp
 (use-package ivy
   :init (ivy-mode 1)
   :config
@@ -111,7 +249,15 @@
                                 (t . ivy--regex-plus)))
   :bind (("C-s" . 'swiper-isearch)
          ("C-r" . 'swiper-backward)))
+#+end_src
 
+Ivy ensures that all commands that use the completion-read function go past Ivy. Counsel
+goes a step further and modifies several well-known functions of Emacs, such as the
+well-known ~M-x~ menu. I am far from using all the Counsel functions. The most important
+ones for me are specified in the configuration below. Furthermore, I have changed the
+ripgrep settings slightly to give a little more context in the results.
+
+#+begin_src emacs-lisp
 (use-package counsel
   :init (counsel-mode t)
   :bind (("C-x C-r" . 'counsel-recentf)
@@ -126,46 +272,120 @@
   (setq counsel-find-file-occur-cmd
         "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
+#+end_src
 
+Ivy presents lists. The package ~prescient~ takes these lists, then sorts and filters
+them. It works nicely with Counsel too.
+
+#+begin_src emacs-lisp
 (use-package prescient
   :config
   (prescient-persist-mode))
 
 (use-package ivy-prescient
   :config (ivy-prescient-mode))
+#+end_src
 
+Hydra's are great to create key binding menu's that stick around. Before, I had more
+defined. Now only a few.  
+
+#+begin_src emacs-lisp
 (use-package ivy-hydra)
+#+end_src
 
+The ~which-key~ package is great for discoverability and memorability of functionalities.
+The package gives completions for keybindings. For example, type ~C-c~ and which-key
+returns all key bindings that follow that combination. Really useful, since there are just
+too many key bindings...
+
+#+begin_src emacs-lisp
 (use-package which-key
   :diminish
   :init
   (progn
     (setq which-key-idle-delay 1.0)
     (which-key-mode)))
+#+end_src
 
+* Editing
+They call it a text editor for a reason. I first make some customizations to various
+editing functions and settings, starting with tabs, which we all hate, so let's turn them
+off:
+
+#+begin_src emacs-lisp
 (setq-default indent-tabs-mode nil
               tab-always-indent 'complete
               tab-width 4)
+#+end_src
 
+The default mode in Emacs is Emacs lisp. For my work, it's better to set this to text:
+
+#+begin_src emacs-lisp
 (setq-default initial-major-mode 'text-mode
               default-major-mode 'text-mode)
+#+end_src
 
+The option to add a double space following a period is so old, it's hard to find exactly
+when it was introduced. The documentation says "at or before Emacs version 19.24". We're
+now at emacs 29, and I'm still turing it off:
+
+#+begin_src emacs-lisp
 (setq sentence-end-double-space nil)
+#+end_src
 
+Highlighting matching parentheses helps catching syntax errors early on:
+
+#+begin_src emacs-lisp
 (show-paren-mode t)
+#+end_src
 
+Emacs >=29 has support for pixel scrolling. This greatly improves editing files with
+images:
+
+#+begin_src emacs-lisp
 (pixel-scroll-precision-mode)
+#+end_src
 
+When working on text, I prefer auto-filll which breaks lines after a set number of
+characters. Hard breakes help with putting text files under git control. To auto-fill all
+text related modes, we add the mode to the text mode hook:
+
+#+begin_src emacs-lisp
 (add-hook 'text-mode-hook #'auto-fill-mode)
+#+end_src
 
+When files change on disk, update the buffer automatically:
+
+#+begin_src emacs-lisp
 (global-auto-revert-mode t)
+#+end_src
 
+Emacs is quick to warn about large files. With the new large file support this is
+certainly no longer necessary. I raise the threshold a bit: 
+
+#+begin_src emacs-lisp
 (setq large-file-warning-threshold 100000000)
+#+end_src
 
+Next are some packages to make editing even easier with Emacs. First two packages for
+easier navigation. ~avy~ offers a great way to navigate your document without touching the
+mouse. It allows you to jump to text in a decision tree like strategy. There are many
+different search options, but I tend to use only two of them. The first,
+~avy-goto-char-timer~ allows you to type in part of a word within a certain time limit
+before avy presents the selection keys. The second one shows selection keys for each line
+in all visible buffers.
+
+#+begin_src emacs-lisp
 (use-package avy
   :bind (("M-j" . 'avy-goto-char-timer)
          ("M-\\" . 'avy-goto-line)))
+#+end_src
 
+Ace-window is another package by the same author, Oleh Krehel, which allows you to quickly
+switch and manipulate windows in Emacs. I bind it to ~M-o~, as I use it quite often and
+that's an easy binding. 
+
+#+begin_src emacs-lisp
 (use-package ace-window
   :config
   (set-face-attribute
@@ -174,7 +394,14 @@
    :height 2.0)  
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   :bind (("M-o" . 'ace-window)))
+#+end_src
 
+I think Sublime text was the first text editor to offer simultaneous editing with multiple
+cursors -- a feature so powerful that nowadays practically all editors (even Jupyter
+notebooks!) implement the feature. For Emacs we rely on the package ~multiple-cursors~,
+which is a stable package that offers a similar experience.
+
+#+begin_src emacs-lisp
 (use-package multiple-cursors
   :bind (("C-S-c C-S-c" . mc/edit-lines)
          ("C->"         . mc/mark-next-like-this)
@@ -182,37 +409,88 @@
          ("C-c C-<"     . mc/mark-all-like-this)
          ("M-<down-mouse-1>" . mc/add-cursor-on-click)
          ("C-c m" . vr/mc-mark)))
+#+end_src
 
+The package ~expand-region~ provides a nifty way to select parts of text of code. By
+repeating the keybinding, the selected region will be expanded semantically. For example,
+when inside a list comprehension that's part of a function in Python, expand region would
+first select everything inside the list comprehension, and then its immediate semantic
+parent, i.e. the function.
+
+#+begin_src emacs-lisp
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
+#+end_src
 
+The ~electric~ package, part of Emacs, enable automatic paren and quote pairing. It's
+simple but effective.
+
+#+begin_src emacs-lisp
 (use-package electric
   :ensure nil
   :config (electric-pair-mode 1))
+#+end_src
 
+The package ~move-text~ provides a little utility function to easily move the current line
+or region up and down. It's bound to Cmd+arrow up or arrow down.
+
+#+begin_src emacs-lisp
 (use-package move-text
   :config (move-text-default-bindings))
+#+end_src
 
+Highlighting the current line gives some visual support when editing files. I turn it on
+globally:
+
+#+begin_src emacs-lisp
 (use-package hl-line
   :ensure nil
   :custom-face (hl-line ((t (:extend t))))
   :hook (after-init . global-hl-line-mode))
+#+end_src
 
+Sometimes having too many buffers around is distracting. The Olivetti mode helps focussing
+on writing by centering your document and increasing the margins. I set the style to
+"fancy", which sets both margins and fringe:
+
+#+begin_src emacs-lisp
 (use-package olivetti
   :config (setq olivetti-style 'fancy))
+#+end_src
 
+For editing csv files, I rely on ~csv-mode~:
+
+#+begin_src emacs-lisp
 (use-package csv-mode
   :defer t)
+#+end_src
 
+Likewise, YAML files are edited with the ~yaml-mode~:
+
+#+begin_src emacs-lisp
 (use-package yaml-mode
   :mode (("\\.yml\\'" . yaml-mode)))
+#+end_src
 
+* System management
+** Dired
+Dired is the main mode for doing all kinds of file management. Below are some
+customizations to let it play nicely with macOS. To use these, make sure gls is install
+through brew.
+
+#+begin_src emacs-lisp
 (when (string= system-type "darwin")       
   (setq dired-use-ls-dired nil))
 
 (setq insert-directory-program "gls" dired-use-ls-dired t)
 (setq dired-recursive-deletes 'always)
+#+end_src
 
+While already really good, the package ~dirvish~ an improved version of dired. It offers a
+much more appealing interface, which is easily customizable. Most importantly, dirvish
+helps discovering all kinds of nifty tricks inside dired that I didn't know about.
+
+#+begin_src emacs-lisp
 (use-package dirvish
   :init
   (dirvish-override-dired-mode)
@@ -256,22 +534,48 @@
    ("M-s" . dirvish-setup-menu)
    ("M-e" . dirvish-emerge-menu)
    ("M-j" . dirvish-fd-jump)))
+#+end_src
 
+** Backups / Recovery / Recent files
+
+Most of my projects are under git control, but still we need a way to ensure local backups
+in case something goes wrong locally before pushing changes to the remote. By default,
+Emacs makes backups in the working directory, but that creates some serious clutter. So, I
+prefer to store then in one place.
+
+#+begin_src emacs-lisp
 (setq backup-by-copying t)
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
 (setq delete-old-versions t)
 (setq version-control t)
 (setq create-lockfiles nil)
+#+end_src
 
+~recentf~ is a minor mode in Emacs that creates a list of recently visited files.
+Completion frontend such as Ivy can then use this list to present to the user. I exclude
+some files I certainly never want to revisit, and also set the maximum number of saved
+items to 500. 
+
+#+begin_src emacs-lisp
 (use-package recentf
   :config
   (setq recentf-exclude '("COMMIT_MSG" "COMMIT_EDITMSG" "github.*txt$"
                           "[0-9a-f]\\{32\\}-[0-9a-f]\\{32\\}\\.org"
                           ".*png$" ".*cache$"))
   (setq recentf-max-saved-items 500))
+#+end_src
 
+Finally, we use the minor save-place-mode to save place in each file, which is rather
+handy upon revisiting files.
+
+#+begin_src emacs-lisp
 (save-place-mode 1)
+#+end_src
 
+** Tramp
+Tramp is great for working on remote files. The config is simple:
+
+#+begin_src emacs-lisp
 (use-package tramp
   :ensure nil
   :defer t
@@ -281,7 +585,14 @@
   (use-package counsel-tramp
     :bind ("C-c t" . counsel-tramp))
   (put 'temporary-file-directory 'standard-value '("/tmp")))
+#+end_src
 
+* Project Management
+
+For project management, I use Projectile. This project interaction library provides all
+kinds of nice features that operate on the project level. 
+
+#+begin_src emacs-lisp
 (use-package projectile
   :diminish
   :config
@@ -290,7 +601,12 @@
   :bind (:map projectile-mode-map
               ("C-c p" . projectile-command-map))
   :init (projectile-mode +1))
+#+end_src
 
+Projectile is integrated with counsel through ~counsel-projectile~. All projects are
+opened in dedicated tabs. 
+
+#+begin_src emacs-lisp
 (defun projectile-name-tab-by-project-name-or-default ()
   (let ((project-name (projectile-project-name)))
     (if (string= "-" project-name)
@@ -329,25 +645,72 @@
    '((add ("T" counsel-projectile-switch-project-action-dired-new-tab "open in new tab") 1)))
   :bind (:map projectile-mode-map
               ("C-c p k" . projectile-kill-buffers-and-enclosing-tab)))
+#+end_src
+* Git
+Magit -- A Git Porcelain inside Emacs is /the/ git interface for Emacs. There's simply no
+way to describe just how good this is. It's one of a kind and of those packages that makes
+me want to stick with Emacs. Customization isn't really necessary, except perhaps for some
+keybindings:
 
+#+begin_src emacs-lisp
 (use-package magit
   :config
   (setq magit-git-executable "/usr/bin/git")
   :bind (("C-x g" . magit-status)
          ("C-c M-g" . magit-file-popup)))
+#+end_src
 
+Keep you git repositories clean! The package ~gitignore-templates~ is a great help to do that.
+
+#+begin_src emacs-lisp
 (use-package gitignore-templates
   :defer t)
+#+end_src
 
+* Writing
+** Org mode
+Org mode is one of the main reasons I use Emacs. Org is a mode in which I take notes of
+articles and meetings, write blogs, keep bookmarks, organize all my appointments in it,
+develop a backlog and project schedule and all sorts of other things. For a scientific
+researcher, org-mode is the best piece of software available because you can configure
+everything, but really everything, to fit your workflow exactly. Some people think that is
+also a risk of org-mode and Emacs in general. But I think adaptability and flexibility are
+crucial since your workflow always changes a little bit. Emacs and Org-mode make it
+possible to customize my academic toolbox exactly to my needs. My configuration for
+Org-mode is quite extensive. I will first discuss a set of general settings. Then I'll
+cover my calendar setup and my org-roam settings.
+
+#+begin_src emacs-lisp
 (use-package org :ensure org-contrib)
+#+end_src
 
-(defvar my-agenda-files '("inbox.org" "projects.org" "habits.org" "agenda.org" "leeslijst.org"))
-(setq org-directory "~/org"
-      org-agenda-files (mapcar
-                        (lambda (f) (concat (file-name-as-directory org-directory) f))
-                        my-agenda-files)
-      org-default-notes-file (concat (file-name-as-directory org-directory) "notes.org"))
+*** Agenda
+My org agenda consists of entries spread across five documents. In ~inbox.org~ I keep all
+my unctegorized to-do's, notes and thoughts. By temporarily storing all new entries in an
+inbox, I limit the time I'm distracted. In ~agenda.org~ I keep all the appointments,
+meetings, zoom-calls, lectures and so on. I usually do not put todo's here, just entries
+that are scheduled for a particular day or time. In ~projects.org~ I keep a backlog of all
+the projects I am working on. In ~habits.org~ I keep a number of habits, such as going to
+exercise, watering the plants, and whether I need a haircut again 🙃. Finally, in
+~readlist.org~ I keep a list of links to articles in Zotero that I still want to read.
 
+#+begin_src emacs-lisp
+  (defvar my-agenda-files '("inbox.org" "projects.org" "habits.org" "agenda.org" "leeslijst.org"))
+  (setq org-directory "~/org"
+        org-agenda-files (mapcar
+                          (lambda (f) (concat (file-name-as-directory org-directory) f))
+                          my-agenda-files)
+        org-default-notes-file (concat (file-name-as-directory org-directory) "notes.org"))
+#+end_src
+
+Crucial to my workflow is org-mode's "refiling" functionality. Refiling means moving
+entries or nodes to specific locations in other files. This is quite handy when moving all
+entries collected in my inbox to the appropriate locations. I usually refile entries to
+one of the projects in ~projects.org~. Each project therein has two main sections, "notes"
+and "tasks." To quickly move entries to these two sections, I modify the variable
+~org-refile-targets~ below.
+
+#+begin_src emacs-lisp
 (mapc (lambda (item)
         (setf (alist-get item ivy-initial-inputs-alist) ""))
       '(org-refile org-agenda-refile org-capture-refile))
@@ -357,13 +720,35 @@
       org-refile-allow-creating-parent-nodes 'confirm
       org-refile-targets '((org-agenda-files :maxlevel . 2))
       org-refile-targets '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")))
+#+end_src
 
+Todo's can be in two stages: done or not. When not, they are given the keyword "TODO." If
+I am waiting for input from someone else or for some other reason can't continue working
+on a todo, then I set the entry to "WAITING". When todo's are done I set them to "DONE",
+and if I don't continue working on them for some reason, I set the keyword to "CANCELLED".
+
+#+begin_src emacs-lisp
 (setq org-todo-keywords '((sequence "TODO" "WAITING" "|" "DONE" "CANCELLED"))
       org-enforce-todo-dependencies t)
+#+end_src
 
+For making reports, I like to log when I completed a todo. I store that information in
+org-mode drawers. 
+
+#+begin_src emacs-lisp
 (setq org-log-done 'time  ; when marking a todo as done, at the time
       org-log-into-drawer t)  ; log into drawers right underneath the heading
+#+end_src
 
+Like "refiling," Org-mode's "capture" functionality allows me to quickly save notes and
+thoughts without being distracted for too long. Org capture works with templates that
+allow different types of capture items to be quickly park. Below I define four of them.
+The first is for new todo items, which automatically land in my inbox. The second is for
+appointments. Captured appointments are automatically placed in the calendar under "future
+appointments." Then there is a template for adding items to my reading list, and finally a
+template for notes that also end up in my inbox.
+
+#+begin_src emacs-lisp
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Tasks")
          "* TODO %^{Todo} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
@@ -377,7 +762,16 @@
         ("n" "Note" entry (file+headline "~/org/inbox.org" "Notes")
          "* %^{Title} %^G \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
          :empty-lines 1)))
+#+end_src
 
+For replying to email I also made a template. For this but I use the package
+~org-mac-link~, which provides functionality to link to text in applications outside of
+Emacs, such as the Address Book, Firefox, Safari, Finder, and to Mail. The ability to link
+to Mail is particularly useful. It works as follows. All mails in Mail have a unique
+message ID. That ID remains the same when the mail is moved to another folder. By linking
+to a mail's ID, I can easily record notes or todo's for emails.
+
+#+begin_src emacs-lisp
 (add-to-list 'load-path (expand-file-name "org-mac-link" "~/.emacs.d/gitrepos"))
 (require 'org-mac-link)
 (add-hook 'org-mode-hook (lambda ()
@@ -389,13 +783,24 @@
   "Visit the message with MESSAGE-ID.
    This will use the command `open' with the message URL."
   (browse-url (concat "message://%3c" (substring message-id 2) "%3e")))
+#+end_src
 
+The corresponding capture template is as follows:
+
+#+begin_src emacs-lisp
 (setq org-capture-template
       (append org-capture-templates
               '(("e" "Mail" entry (file+headline "~/org/inbox.org" "Mail")
                  "* TODO  %(org-mac-message-get-links \"s\") %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
                  :empty-lines 1))))
+#+end_src
 
+The final capture template is for storing bookmarks. I keep links to interesting web pages
+in a file called ~bookmarks.org~. I use ~org-cliplink~ to copy URLs from the clipboard to
+a file. The nice thing about this packages is that it automatically uses the title of the
+website for displaying the link.
+
+#+begin_src emacs-lisp
 (setq org-capture-template
       (append org-capture-templates
               '(("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
@@ -405,7 +810,13 @@
 (use-package org-cliplink
   :defer t
   :after org)
+#+end_src
 
+Org's Agenda mode aggregates all TODO's and scheduled items from the different agenda
+files and presents them in a nice overview. To easily customize this overview, I use the
+~org-super-agenda~ package, which allows you to group TODOs on all kinds of criteria. 
+
+#+begin_src emacs-lisp
 (use-package org-super-agenda
   :after org
   :config
@@ -414,7 +825,11 @@
     :hook (org-agenda-mode . origami-mode)))
 
 (add-hook 'org-agenda-mode-hook 'org-super-agenda-mode)
+#+end_src
 
+Below are some preferences for Org's agenda:
+
+#+begin_src emacs-lisp
 (setq org-agenda-search-view-always-boolean t
       org-agenda-block-separator (propertize
                                   (make-string (frame-width) ?\u2594)
@@ -432,7 +847,19 @@
       org-agenda-skip-deadline-if-done t
       org-agenda-format-date "\n%A, %-e %B %Y"
       org-agenda-dim-blocked-tasks t)
+#+end_src
 
+#+DOWNLOADED: file:/Users/folgert/Desktop/Screenshot 2022-12-24 at 16.45.08.png @ 2022-12-24 16:59:13
+[[file:Writing/2022-12-24_16-59-13_Screenshot 2022-12-24 at 16.45.08.png]]
+
+
+My agenda view consist of three windows, which are displayed in a dedicated tab. The first
+presents the agenda of the current day. The second displays my project backlog, including
+TODOs temporarily stored in my Inbox, as well as articles I want to read. These different
+views are stored in the variable ~org-agenda-custom-commands~. First, we add a view for my
+daily tasks:
+
+#+begin_src emacs-lisp
 (setq org-agenda-custom-commands
       '(("d" "Dagelijkse Takenlijst"
          ((agenda ""
@@ -443,7 +870,14 @@
                    (org-super-agenda-groups
                     '((:name "" :time-grid t :scheduled t :deadline t :category "verjaardag")
                       (:discard (:anything t))))))))))
+#+end_src
 
+Next, we define the project backlog view. The view consist of three sections: one for
+unsorted TODOs in the inbox, one with all project TODOs grouped by category (which
+coincides with the project name in my case), and a final section with articles I plan to
+read. 
+
+#+begin_src emacs-lisp
 (org-super-agenda--def-auto-group category "their org-category property"
   :key-form (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
               (org-get-category))
@@ -473,7 +907,11 @@
                     (:name " Priority B reading" :priority "B")
                     (:name " Priority C reading" :priority "C")
                      (:discard (:anything t)))))))))))
+#+end_src
 
+The final view, then, is used to present a weekly overview of completed tasks. 
+
+#+begin_src emacs-lisp
 (defun format-closed-query ()
   (format "+TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" (read-string "Number of days: ")))
 (setq org-agenda-custom-commands (append org-agenda-custom-commands
@@ -481,7 +919,13 @@
          ((tags (format-closed-query)
                 ((org-agenda-overriding-header "Overview of DONE tasks")
                  (org-agenda-archives-mode t))))))))
+#+end_src
 
+The third and final window displays a calendar view. Currently I use calfw and calfw-org
+which displays all my TODOs in a calendar view much like those you find in popular
+calendar apps. 
+
+#+begin_src emacs-lisp
 ;; Functions to keep calendar in sight when working on the agenda
 (defun fk-window-displaying-agenda-p (window)
   (equal (with-current-buffer (window-buffer window) major-mode)
@@ -498,7 +942,11 @@
 (add-to-list 'display-buffer-alist (cons "\\*Calendar\\*" (cons #'fk-position-calendar-buffer nil)))
 (use-package calfw)
 (use-package calfw-org)
+#+end_src
 
+The following functions create this custom view:
+
+#+begin_src emacs-lisp
 (defun side-by-side-agenda-view ()
   (progn
     (org-agenda nil "a")
@@ -522,7 +970,16 @@
         (tab-bar-rename-tab "Agenda")
         (side-by-side-agenda-view)
         (message "Agenda loaded")))))
+#+end_src
 
+*** Org Roam
+
+I use Org Roam for note keeping. Org Roam is much like Roam research, Obsidian, and other
+tools for so-called `networked thought'. Org Roam provides a simple system to connect
+files with links and backlinks, thus forming a graph or network of all your notes. I
+mainly use it for research, and sometimes publish seperate notebooks on my website. 
+
+#+begin_src emacs-lisp
 (use-package org-roam
   :init 
   (setq org-roam-v2-ack t)
@@ -553,7 +1010,14 @@
 (use-package org-roam-bibtex
   :hook (org-roam-mode . org-roam-bibtex-mode)
   :after org-roam)
+#+end_src
 
+Org Roam already provides good text-based visualizations of the network, but sometimes
+it's nice to actually browse the network in a visual graph. The package org-roam-ui gives
+you a way to browse the network in an interactive graph which is rendered in the browser.
+It's quite useful, and often helps remembering certain relationships between notes. 
+
+#+begin_src emacs-lisp
 (use-package org-roam-ui
   :after org-roam
   :config
@@ -562,7 +1026,18 @@
         org-roam-ui-update-on-save t
         org-roam-ui-browser-function #'browse-url-chromium
         org-roam-ui-open-on-start nil))
+#+end_src
 
+Here's a picture of the network:
+
+#+DOWNLOADED: file:/Users/folgert/Desktop/Screenshot 2022-12-24 at 16.40.27.png @ 2022-12-24 16:40:43
+[[file:Writing/2022-12-24_16-40-43_Screenshot 2022-12-24 at 16.40.27.png]]
+
+
+The starting point of my org roam is a slipbox (kaartenbak), which I open in a new
+dedicated tab with the following utility function:
+
+#+begin_src emacs-lisp
 (defun open-kaartenbak ()
   (interactive)
   (let ((tab-bar-index (tab-bar--tab-index-by-name "Kaartenbak")))
@@ -572,7 +1047,12 @@
         (tab-bar-new-tab)
         (tab-bar-rename-tab "Kaartenbak")
         (find-file "~/kaartenbak/20210727213932-kaartenbak.org")))))
+#+end_src
 
+*** Uncategorized settings
+Below are some tweaks to make editing org files a little more enjoyable to make.
+
+#+begin_src emacs-lisp
 (setq org-use-speed-commands t  ; set to true for navigation with shortcuts
       org-image-actual-width (list 550) ; resize the width of images
       org-format-latex-options (plist-put org-format-latex-options :scale 1.5)
@@ -583,9 +1063,22 @@
       org-latex-create-formula-image-program 'dvisvgm
       org-latex-default-class "tufte-handout"
       org-highlight-latex-and-related '(native))
+#+end_src
 
+Org-download is a convenient package for adding images or information from websites to org
+documents. 
+
+#+begin_src emacs-lisp
 (use-package org-download)
+#+end_src
 
+** Blogging
+My [[https://www.karsdorp.io][website]] is built with [[https://gohugo.io/][Hugo]], a popular static site generator. The package ox-hugo
+provides a convenient bridge between my prefered writing system, org-mode and Hugo. It
+allows me to export notes in roam or basically any note I want to my website.
+Configuration is straightforward:
+
+#+begin_src emacs-lisp
 (use-package ox-hugo
   :config
   (require 'oc-csl)
@@ -595,7 +1088,13 @@
   (setq org-cite-csl-styles-dir "~/Zotero/styles")
   (setq org-cite-export-processors '((t csl)))
   :after ox)
+#+end_src
 
+** LaTeX
+Auctex is the go-to package for LaTeX editing in Emacs. It's been there for a while. It's
+reliable, flexible, and doesn't get in your way.
+
+#+begin_src emacs-lisp
 (use-package tex
   :defer t
   :ensure auctex
@@ -619,7 +1118,13 @@
   :config
   (bind-key "C-c h l" 'hydra-langtool/body TeX-mode-map)
   (company-auctex-init))
+#+end_src
 
+~ox-latex~ is used for exporting org documents to LaTeX. Here I add some customization to
+export with Tufte Handout by default and add the LaTeX ~minted~ package for exporting
+blocks of code. 
+
+#+begin_src emacs-lisp
 (use-package ox-latex
   :ensure nil
   :defer t
@@ -640,10 +1145,28 @@
                ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
                ("\\paragraph{%s}" . "\\paragraph*{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+end_src
 
+** Bibliography management
+BibTeX support comes from the ~bibtex~ package. No special customization:
+
+#+begin_src emacs-lisp
 (use-package bibtex
   :mode (("\\.bib\\'" . bibtex-mode)))
+#+end_src
 
+#+DOWNLOADED: file:/Users/folgert/Desktop/Screenshot 2022-12-23 at 09.37.23.png @ 2022-12-23 09:37:53
+[[file:Writing/2022-12-23_09-37-53_Screenshot 2022-12-23 at 09.37.23.png]]
+
+Ivy-BibTeX is an extension to Ivy that allows you to search a BibTeX bibliography. Since
+it is based on Ivy, it has advanced search capabilities enabling you to find what you are
+looking for very quickly. The package is integrated with the different writing modes of
+Emacs, such as Markdown, LaTeX and Orgmode. It works on the basis of a .bib file. I use
+the bibliography manager Zotero to make one. Zotero's "better bibtex" plugin monitors
+changes in the bibliographic database and automatically exports a new version of the
+BibTeX file if there are any changes. Here is the complete configuration:
+
+#+begin_src emacs-lisp
 (use-package ivy-bibtex
   :bind*
   ("C-c C-r" . ivy-bibtex)
@@ -664,16 +1187,38 @@
   (ivy-add-actions 'ivy-bibtex '(("R" ivy-bibtex-add-to-reading-list "add to reading list")))
   (ivy-add-actions 'ivy-bibtex '(("F" ivy-bibtex-show-pdf-in-finder "show in finder")))
   (ivy-add-actions 'ivy-bibtex '(("M" ivy-bibtex-read-on-remarkable "read on remarkable"))))
+#+end_src
 
+I added some "actions" to those that ivy-bibtex itself provides. The first action, tied to
+the "R" key, is "add to reading list". This action allows you to efficiently add
+bibliographic entries to the reading list in the org agenda by typing "R" at a selected
+entry. A capture buffer is presented to add some notes. The function that makes this
+possible is the following:
+
+#+begin_src emacs-lisp
 (defun add-to-reading-list (keys &optional fallback-action)
   (let ((link (bibtex-completion-format-citation-org-title-link-to-PDF keys)))
     (kill-new link)
     (org-capture nil "r")))
+#+end_src
 
+To read PDFs, I prefer to use my [[https://remarkable.com/][Remarkable tablet]]. It is just a lot of hassle to select
+an entry from Zotero, find the corresponding PDF, and then put it on my Remarkable tablet.
+The function ~read-on-remarkable~ makes all this a lot easier. Find an entry with
+Ivy-bibtex and send the corresponding PDF directly from Emacs to the Remarkable using the
+Remarkable API, rmapi.
+
+#+begin_src emacs-lisp
 (defun read-on-remarkable (keys &optional fallback-action)
   (let ((fpath (car (bibtex-completion-find-pdf (car keys)))))
     (call-process "rmapi" nil 0 nil "put" fpath)))
+#+end_src
 
+Finally, two more functions to open PDF files either in Finder or in the PDF reader Skim.
+These are two functions specifically for macOS, but I assume they could easily be adapted
+for other systems.
+
+#+begin_src emacs-lisp
 (defun bibtex-pdf-open-function (fpath)
   (call-process "open" nil 0 nil "-a" "/Applications/Skim.app" fpath))
 
@@ -683,11 +1228,21 @@
      ((> (length dir) 1)
       (shell-command (concat "open " dir)))
      (t
-      (message "No PDF(s) found for this entry: %s" key)))))
+      (message "No PDF(s) found for this entry: %s" key)))))    
+#+end_src
 
+In case you want to read PDF files inside Emacs?
+
+#+begin_src emacs-lisp
 (use-package pdf-tools
   :config (setq pdf-view-use-scaling t))
+#+end_src
 
+** Markdown
+The ~markdown-mode~ package provides a major mode for editing Markdown files in Emacs.
+Customization is pretty simple and straightforward. 
+
+#+begin_src emacs-lisp
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
   :mode (("README\\.md\\'" . gfm-mode)
@@ -698,10 +1253,29 @@
   (setq visual-line-column 90)
   (setq markdown-fontify-code-blocks-natively t)
   (setq markdown-enable-math t))
+#+end_src
 
+The ~pandoc-mode~ package provides an elegant interface to perform document conversions
+using the pandoc library. It's not strictly markdown specific, but I tend to use it mainly
+when working with Markdown files. 
+
+#+begin_src emacs-lisp
 (use-package pandoc-mode
   :after org)
+#+end_src
 
+* Programming
+** General
+
+The development of the Language Server Protocol has made code completion for virtually all
+text editors easier and more uniform. By decoupling completion from the presentation, much
+like a backend and frontend, it is now possible to get the same high quality completions
+in virtually every programming language. In Emacs, there are two modes that can speak with
+LSP. I once chose ~lsp-mode~, but the other, ~eglot~, is just as good, in my opinion.
+Below is my configuration, which largely consists of turning off all kinds of unnecessary
+functionality (for me).
+
+#+begin_src emacs-lisp
 (use-package lsp-mode
   :init
   (setq lsp-keymap-prefix "C-c l")
@@ -720,7 +1294,14 @@
         lsp-pyright-python-executable-cmd "python3"
         )
   :commands (lsp lsp-deferred))
+#+end_src
 
+To display completions, then, I use the company framework of Emacs, which stands for
+"complete any". It's purpose is to display completion candidates. Company is enabled
+globally, with the exception of text modes and terminal modes. Other customizations are
+failry straightforward.
+
+#+begin_src emacs-lisp
 (use-package company
   :config
   (add-hook 'prog-mode-hook 'company-mode)
@@ -740,19 +1321,43 @@
   :hook (lsp-mode . company-mode)
   :bind (:map company-active-map ("<tab>" . company-complete-selection))
   (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common)))
+#+end_src
 
+The package ~company-prescient~ provides a way to sort completion candidates using
+~prescient~.
+
+#+begin_src emacs-lisp
 (use-package company-prescient
   :config (company-prescient-mode))
+#+end_src
 
+** Python
+
+I use Pyright as a Static type checker for Python, and connect that with LSP:
+
+#+begin_src emacs-lisp
 (use-package lsp-pyright
   :ensure t
   :hook (python-mode . (lambda ()
                           (require 'lsp-pyright)
                           (lsp))))  ; or lsp-deferred
+#+end_src
 
-(use-package pyvenv
-  :init (setenv "WORKON_HOME" "~/.virtualenvs/"))
+~pyvenv~ is a minor mode to work with virtual environments in Python. Nothing fancy, but
+it works:
 
+#+begin_src emacs-lisp
+  (use-package pyvenv
+    :init (setenv "WORKON_HOME" "~/.virtualenvs/"))
+#+end_src
+
+The ~jupyter~ package offers a REPL and org-mode source block frontend to Jupyter kernels.
+This intergration with org-mode is truly amazing, as it allows you to turn any org
+document into a fully interactive notebook much like Jupyter, without heaving to deal with
+the unpleasantness of typing in a browser. It also gives me all the benefits of working in
+org mode, including the integration with my agenda, making notes in org roam, and my blog. 
+
+#+begin_src emacs-lisp
 (use-package jupyter
   :after org
   :config
@@ -774,12 +1379,26 @@
           (:session . "R")
           (:kernel . "R")))
   (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
+#+end_src
 
+** R
+For working with R, Emacs Speaks Statistics (ESS) provides an unmatched experience. It's
+an interactive environment much like jupyter, which allows you to easily and iteratively
+execute parts of your statistical analyses in R.
+
+#+begin_src emacs-lisp
 (use-package ess
   :defer t
   :config
   (setq ess-eval-visibly 'nowait))
+#+end_src
 
+** Stan
+Libraries for doing Bayesian statistics, both in Python and R, often rely on Stan. There
+is some support in Emacs for writing Stan code, including rudimentary completion and
+documentation.
+
+#+begin_src emacs-lisp
 (use-package stan-mode :defer t)
 
 (use-package company-stan
@@ -789,7 +1408,14 @@
 (use-package eldoc-stan
   :after stan-mode
   :hook (stan-mode . eldoc-stan-setup))
+#+end_src
 
+* Searching
+The packaghe ~deadgrep~ offers an intuitive interface on [[https://github.com/BurntSushi/ripgrep][ripgrep]], which is a fast
+alternative to grep. I add a little utility function to search directly in my folder with
+org files.
+
+#+begin_src emacs-lisp
 (use-package deadgrep
   :bind*
   (("C-c r" . deadgrep)
@@ -802,11 +1428,21 @@
           (deadgrep--context '(1 . 1))
           (deadgrep--search-type 'regexp))
       (deadgrep words))))
+#+end_src
 
+* Utility functions
+Handy little package and functionality to open a terminal (in my case iterm2) in the same
+folder as where the working document resides.
+
+#+begin_src emacs-lisp
 (use-package terminal-here
   :config
   (setq terminal-here-mac-terminal-command 'iterm2))
+#+end_src
 
+Simple utility function for (un)commenting lines. Bound to M-/. 
+
+#+begin_src emacs-lisp
 (defun comment-current-line-dwim ()
   "Comment or uncomment the current line."
   (interactive)
@@ -816,30 +1452,41 @@
       (push-mark (beginning-of-line) t t)
       (end-of-line)
       (comment-dwim nil))))
+#+end_src
 
-(defun new-scratch-pad ()
-"Create a new org-mode buffer for random stuff."
-(interactive)
-(let ((tab-bar-index (tab-bar--tab-index-by-name "Kladblok")))
-  (if tab-bar-index
+Simple function to create a scratch pad for random thoughts. Similar to Emacs's *scratch*
+buffer but for org files.
+
+#+begin_src emacs-lisp
+  (defun new-scratch-pad ()
+  "Create a new org-mode buffer for random stuff."
+  (interactive)
+  (let ((tab-bar-index (tab-bar--tab-index-by-name "Kladblok")))
+    (if tab-bar-index
+        (progn
+          (tab-bar-select-tab (+ tab-bar-index 1))
+          (switch-to-buffer "kladblok")
+          (olivetti-mode t))
       (progn
-        (tab-bar-select-tab (+ tab-bar-index 1))
-        (switch-to-buffer "kladblok")
-        (olivetti-mode t))
-    (progn
-      (tab-bar-new-tab)
-      (tab-bar-rename-tab "Kladblok")
-      (let ((buffer (generate-new-buffer "kladblok")))
-        (switch-to-buffer buffer)
-        (setq buffer-offer-save t)
-        (org-mode)
-        (olivetti-mode t))))))
+        (tab-bar-new-tab)
+        (tab-bar-rename-tab "Kladblok")
+        (let ((buffer (generate-new-buffer "kladblok")))
+          (switch-to-buffer buffer)
+          (setq buffer-offer-save t)
+          (org-mode)
+          (olivetti-mode t))))))
+#+end_src
 
+#+begin_src emacs-lisp
 (defun xah-unfill-paragraph ()
   (interactive)
   (let ((fill-column most-positive-fixnum))
     (fill-paragraph)))
+#+end_src
 
+Hydra to resize windows without touching the mouse.
+
+#+begin_src emacs-lisp
 (defhydra hydra-windows (:color red)
   ("s" shrink-window-horizontally "shrink horizontally" :column "Sizing")
   ("e" enlarge-window-horizontally "enlarge horizontally")
@@ -852,7 +1499,11 @@
   ("d" delete-window "delete current window")
   ("x" delete-other-windows "delete-other-windows")
   ("q" nil "quit menu" :color blue :column nil))
+#+end_src
 
+* Global key bindings
+
+#+begin_src emacs-lisp
 (setq mac-option-key-is-meta nil
       mac-command-key-is-meta t
       mac-command-modifier 'meta
@@ -875,13 +1526,24 @@
 (define-key global-map "\C-ca" 'org-agenda)
 (define-key global-map (kbd "C-c M-a") 'show-my-agenda)
 (global-set-key (kbd "C-x C-b") 'tab-bar-select-tab-by-name)
+#+end_src
 
+* Server
+Start an Emacs server, which allows you to start up successive clients instantaneously:
+
+#+begin_src emacs-lisp
 (use-package server
   :config
   (unless (server-running-p)
     (server-start)))
+#+end_src
 
+* Custom file
+Config changes made through the customize UI will be stored here
+
+#+begin_src emacs-lisp
 (setq custom-file (expand-file-name "custom.el" "~/.emacs.d"))
 
 (when (file-exists-p custom-file)
   (load custom-file))
+#+end_src
