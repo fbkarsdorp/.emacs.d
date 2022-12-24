@@ -8,17 +8,16 @@
 (setq package-archives (append
 			package-archives
 			'(("melpa" . "https://melpa.org/packages/")
-                          ;; ("elpy" . "http://jorgenschaefer.github.io/packages/")
                           ("elpa" . "https://elpa.nongnu.org/nongnu/"))))
-                          ;; ("org" . "https://orgmode.org/elpa/"))))
 
-(setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . 'nil)                          
-                            (font . "-*-Input Mono Condensed-medium-normal-condensed-*-11-*-*-*-m-0-iso10646-1")
-                            (height . 58) (width . 219)))
+(setq default-frame-alist '((ns-transparent-titlebar . t) (ns-appearance . nil)                          
+                            ;; (font . "-*-Input Mono Compressed-regular-normal-condensed-*-12-*-*-*-m-0-iso10646-1")
+                            (height . 48) (width . 159)))
 
+(set-face-attribute 'default nil :family "Input Mono Condensed" :height 120)
 (setq frame-inhibit-implied-resize t)
 (setq initial-major-mode 'fundamental-mode)
-(setq initial-scratch-message "")
+(setq inhibit-startup-echo-area-message "There is a crack in everything, that's how the light gets in")
 
 ;; Turn off swiping to switch buffers (defined in mac-win.el)
 (global-unset-key [swipe-left])
@@ -47,7 +46,7 @@
 (require 'diminish)
 (require 'bind-key)
 
-;; GUI simplifications
+;; ;; GUI simplifications
 (tool-bar-mode -1)
 ;; (menu-bar-mode -1)
 (scroll-bar-mode -1)
@@ -56,14 +55,14 @@
 
 ;; tab-bar
 (setq tab-bar-mode t)
-(setq tab-bar-show nil)
+;; (setq tab-bar-show nil)
 (global-set-key (kbd "C-x C-b") 'tab-bar-select-tab-by-name)
 
 ;; ;; Customizations
 (setq inhibit-startup-message t)
 (setq frame-title-format '((:eval (format "%s" (cdr (assoc 'name (tab-bar--current-tab)))))))
 (show-paren-mode t)
-(blink-cursor-mode -1)
+(blink-cursor-mode nil)
 (setq-default cursor-type 'hbar)
 (save-place-mode 1)
 (setq sentence-end-double-space nil)
@@ -142,6 +141,9 @@
         (tab-bar-new-tab)
         (tab-bar-rename-tab "Kaartenbak")
         (find-file "~/kaartenbak/20210727213932-kaartenbak.org")))))
+
+(use-package olivetti
+  :config (setq olivetti-style 'fancy))
 
 (defun new-scratch-pad ()
   "Create a new org-mode buffer for random stuff."
@@ -228,6 +230,9 @@
   (setq org-cite-export-processors '((t csl)))
   :after ox)
 
+(use-package pdf-tools
+  :config (setq pdf-view-use-scaling t))
+
 (use-package csv-mode
   :defer t)
 
@@ -274,6 +279,7 @@
         modus-themes-hl-line '(nil)
         modus-themes-links '(nil)
         modus-themes-mixed-fonts nil
+        modus-themes-tabs-accented t
         modus-themes-mode-line '(moody borderless accented)
         modus-themes-prompts '(background)
         modus-themes-region '(accented bg-only)
@@ -451,52 +457,6 @@
 (use-package company-prescient
   :config (company-prescient-mode))
 
-(use-package rust-mode
-  :bind ( :map rust-mode-map
-               (("C-c C-t" . racer-describe)
-                ([?\t] .  company-indent-or-complete-common)))
-  :config
-  (progn
-    ;; add flycheck support for rust (reads in cargo stuff)
-    ;; https://github.com/flycheck/flycheck-rust
-    (use-package flycheck-rust)
-
-    ;; cargo-mode for all the cargo related operations
-    ;; https://github.com/kwrooijen/cargo.el
-    (use-package cargo
-      :hook (rust-mode . cargo-minor-mode)
-      :bind
-      ("C-c C-c C-n" . cargo-process-new)) ;; global binding
-
-    ;;; racer-mode for getting IDE like features for rust-mode
-    ;; https://github.com/racer-rust/emacs-racer
-    (use-package racer
-      :hook (rust-mode . racer-mode)
-      :config
-      (progn
-        ;; package does this by default ;; set racer rust source path environment variable
-        ;; (setq racer-rust-src-path (getenv "RUST_SRC_PATH"))
-        (defun my-racer-mode-hook ()
-          (set (make-local-variable 'company-backends)
-               '((company-capf company-files)))
-          (setq company-minimum-prefix-length 1)
-          (setq indent-tabs-mode nil))
-
-        (add-hook 'racer-mode-hook 'my-racer-mode-hook)
-
-        ;; enable company and eldoc minor modes in rust-mode (racer-mode)
-        (add-hook 'racer-mode-hook #'company-mode)
-        (add-hook 'racer-mode-hook #'eldoc-mode)))
-
-    (add-hook 'rust-mode-hook 'flycheck-mode)
-    (add-hook 'flycheck-mode-hook 'flycheck-rust-setup)
-
-    ;; format rust buffers on save using rustfmt
-    (add-hook 'before-save-hook
-              (lambda ()
-                (when (eq major-mode 'rust-mode)
-                  (rust-format-buffer))))))
-
 (use-package wgrep :defer t)
 
 (use-package deadgrep
@@ -511,26 +471,6 @@
           (deadgrep--context '(1 . 1))
           (deadgrep--search-type 'regexp))
       (deadgrep words))))
-
-(defun bibtex-pdf-open-function (fpath)
-  (call-process "open" nil 0 nil "-a" "/Applications/Skim.app" fpath))
-
-(defun add-to-reading-list (keys &optional fallback-action)
-  (let ((link (bibtex-completion-format-citation-org-title-link-to-PDF keys)))
-    (kill-new link)
-    (org-capture nil "r")))
-
-(defun read-on-remarkable (keys &optional fallback-action)
-  (let ((fpath (car (bibtex-completion-find-pdf (car keys)))))
-    (call-process "rmapi" nil 0 nil "put" fpath)))
-
-(defun show-pdf-in-finder (keys &optional fallback-action)
-  (let ((dir (file-name-directory (car (bibtex-completion-find-pdf (car keys))))))
-    (cond
-     ((> (length dir) 1)
-      (shell-command (concat "open " dir)))
-     (t
-      (message "No PDF(s) found for this entry: %s" key)))))
     
 (use-package ivy-bibtex
   :bind*
@@ -552,6 +492,26 @@
   (ivy-add-actions 'ivy-bibtex '(("R" ivy-bibtex-add-to-reading-list "add to reading list")))
   (ivy-add-actions 'ivy-bibtex '(("F" ivy-bibtex-show-pdf-in-finder "show in finder")))
   (ivy-add-actions 'ivy-bibtex '(("M" ivy-bibtex-read-on-remarkable "read on remarkable"))))
+
+(defun bibtex-pdf-open-function (fpath)
+  (call-process "open" nil 0 nil "-a" "/Applications/Skim.app" fpath))
+
+(defun add-to-reading-list (keys &optional fallback-action)
+  (let ((link (bibtex-completion-format-citation-org-title-link-to-PDF keys)))
+    (kill-new link)
+    (org-capture nil "r")))
+
+(defun read-on-remarkable (keys &optional fallback-action)
+  (let ((fpath (car (bibtex-completion-find-pdf (car keys)))))
+    (call-process "rmapi" nil 0 nil "put" fpath)))
+
+(defun show-pdf-in-finder (keys &optional fallback-action)
+  (let ((dir (file-name-directory (car (bibtex-completion-find-pdf (car keys))))))
+    (cond
+     ((> (length dir) 1)
+      (shell-command (concat "open " dir)))
+     (t
+      (message "No PDF(s) found for this entry: %s" key)))))
 
 (defun counsel-bibtex-entry ()
   (interactive)
@@ -681,9 +641,9 @@
       org-default-notes-file (concat org-directory "/notes.org")
       org-todo-keywords '((sequence "TODO" "WAITING" "RESCHEDULE" "|" "DONE" "CANCELLED"))
       org-deadline-warning-days 2
-      ;; Refiling customizations
+      ;; ;; Refiling customizations
       org-refile-use-outline-path 'file
-      org-highlight-latex-and-related '(native script)
+      org-highlight-latex-and-related '(native)
       org-outline-path-complete-in-steps nil
       org-refile-allow-creating-parent-nodes 'confirm
       org-refile-targets '((org-agenda-files :maxlevel . 2))
@@ -706,7 +666,6 @@
       org-cite-global-bibliography '("~/org/bib.bib")
       org-agenda-files (mapcar (lambda (f) (concat org-directory f))
                                '("/inbox.org" "/projects.org" "/habits.org" "/agenda.org" "/leeslijst.org")))
-
 
 (use-package org-cliplink
   :defer t
@@ -781,14 +740,20 @@
               str (concat str "  ")))
       str)))
 
+(org-super-agenda--def-auto-group category "their org-category property"
+  :key-form (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
+              (org-get-category))
+  :header-form (concat " " key))
+
 (setq org-agenda-block-separator (propertize
                                   (make-string (frame-width) ?\u2594)
                                   'face '(:foreground "grey38"))
       org-super-agenda-header-separator ""
       org-habit-show-habits-only-for-today nil
-      org-agenda-sticky t
       org-agenda-restore-windows-after-quit t
       org-agenda-show-future-repeats nil
+      org-agenda-window-setup 'current
+      org-agenda-span 'day
       org-agenda-start-on-weekday 1 ;; nil
       org-agenda-skip-deadline-prewarning-if-scheduled t
       org-agenda-skip-scheduled-if-done t
@@ -800,7 +765,7 @@
          ((agenda ""
                   ((org-agenda-overriding-header " Planner")
                    (org-agenda-prefix-format '((agenda . " %?-12t")))
-                   (org-agenda-span 'week)
+                   (org-agenda-span 'day)
                    (org-deadline-warning-days 0)
                    (org-super-agenda-groups
                     '((:name "" :time-grid t :scheduled t :deadline t :category "verjaardag")
@@ -808,16 +773,15 @@
         ("p" "Project backlog"
           ((todo "TODO|NEXT|WAITING|HOLD"
                 ((org-agenda-overriding-header " Inbox\n")
-                 (org-agenda-prefix-format "  %(my-agenda-indentation)")
+                 (org-agenda-prefix-format "  ")
                  (org-agenda-files '("~/org/inbox.org"))))
           (todo "TODO|NEXT|WAITING|HOLD"
                  ((org-agenda-overriding-header " Project TODOs")
-                  (org-agenda-prefix-format "  ")
+                 (org-agenda-prefix-format "%(my-agenda-indentation)")
                   (org-agenda-files '("~/org/projects.org"))
                   (org-super-agenda-groups
                    '((:discard (:scheduled t :date t))
-                     (:auto-map (lambda (item)
-                        (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)))))
+                     (:auto-category t)
                      (:discard (:anything t))))))
           (todo "TODO|NEXT"
                 ((org-agenda-overriding-header " Reading List")
@@ -828,8 +792,6 @@
                     (:name " Priority A reading" :priority "A")
                     (:name " Priority B reading" :priority "B")
                     (:name " Priority C reading" :priority "C")
-                     ;; (:auto-map (lambda (item)
-                     ;;    (concat " " (upcase-initials (org-find-text-property-in-string 'org-category item)))))
                      (:discard (:anything t))))))))
 
         ("w" "Weekly review"
@@ -837,22 +799,26 @@
                 ((org-agenda-overriding-header "Overview of DONE tasks")
                  (org-agenda-archives-mode t)))))))
 
+
 (defun side-by-side-agenda-view ()
   (progn
     (org-agenda nil "a")
+    (split-window-right)
     (org-agenda-redo)
+    (split-window-below)
+    (other-window 1)
+    ;; (enlarge-window 4)
+    (cfw:open-org-calendar)
+    (setq org-agenda-sticky t)
+    (other-window 1)
     (org-agenda nil "p")
-    (org-agenda-redo)
-    (switch-to-buffer-other-window "*Org Agenda(a)*")
-    (calendar)))
+    (setq org-agenda-sticky nil)))
 
 (defun show-my-agenda ()
   (interactive)
   (let ((tab-bar-index (tab-bar--tab-index-by-name "Agenda")))
     (if tab-bar-index
-        (progn 
-          (tab-bar-select-tab (+ tab-bar-index 1))
-          (side-by-side-agenda-view))
+        (tab-bar-select-tab (+ tab-bar-index 1))
       (progn
         (tab-bar-new-tab)
         (tab-bar-rename-tab "Agenda")
@@ -869,7 +835,7 @@
 (defun fk-position-calendar-buffer (buffer alist)
   (let ((agenda-window (car (remove-if-not #'fk-window-displaying-agenda-p (window-list)))))
     (when agenda-window
-      (if (not (get-buffer-window "*Calendar*")) ;; don't create a new split if calendar is already there.
+      (if (not (get-buffer-window "*Calendar*"))
           (let ((desired-window (split-window agenda-window nil 'below)))
             (set-window-buffer desired-window buffer)
             desired-window)))))
@@ -923,8 +889,6 @@
 (use-package org-roam-bibtex
   :hook (org-roam-mode . org-roam-bibtex-mode)
   :after org-roam)
-  ;; :config (require 'org-ref))
-  ;; (setq org-ref-default-bibliography '("~/org/bib.bib")))
 
 (use-package org-roam-ui
   :after org-roam
@@ -978,10 +942,6 @@
 (use-package visual-regexp-steroids
   :after visual-regexp)
 
-(use-package org-tree-slide
-  :config
-  (setq org-tree-slide-header t))
-
 (use-package all-the-icons)
 
 (use-package dirvish
@@ -1028,6 +988,9 @@
    ("M-e" . dirvish-emerge-menu)
    ("M-j" . dirvish-fd-jump)))
 
+(use-package calfw)
+(use-package calfw-org)
+  
 (use-package server
   :config
   (unless (server-running-p)
