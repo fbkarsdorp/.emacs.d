@@ -15,6 +15,8 @@ screenshot of my current setup:
 #+DOWNLOADED: file:/Users/folgert/Desktop/Screenshot 2022-12-21 at 16.30.30.png @ 2022-12-21 16:30:53
 [[file:What's_this?/2022-12-21_16-30-53_Screenshot 2022-12-21 at 16.30.30.png]]
 
+This document is also on GitHub. See https://github.com/fbkarsdorp/.emacs.d
+
 * Startup
 #+begin_src emacs-lisp :epilogue (format-time-string ";; Last generated on %c")
 ;;; -*- lexical-binding: t -*-
