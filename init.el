@@ -29,7 +29,9 @@
   :config (setq async-bytecomp-package-mode 1))
 
 (setq default-frame-alist '((ns-transparent-titlebar . t)
-                            (height . 48) (width . 159)))
+                            ;; (undecorated-round . t)
+                            (height . 47) (width . 180)))
+                            ;; (internal-border-width . 18)))
 
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -46,17 +48,13 @@
 (use-package moody
   :config
   (setq x-underline-at-descent-line t)
-  (moody-replace-mode-line-buffer-identification)
-  (moody-replace-vc-mode))
+  (moody-replace-mode-line-buffer-identification))
+;; (moody-replace-vc-mode))
 
 (use-package minions
   :config (minions-mode 1))
 
 (use-package diminish)
-
-(setq tab-bar-mode t)
-(setq tab-bar-show nil)
-(setq frame-title-format '((:eval (format "%s" (cdr (assoc 'name (tab-bar--current-tab)))))))
 
 (defadvice load-theme (before clear-previous-themes activate)
   "Clear existing theme settings instead of layering them"
@@ -66,36 +64,73 @@
   :init
   (setq modus-themes-bold-constructs t
         modus-themes-completions '((matches . (extrabold intense background))
-                                   (selection . (semibold accented intense))
-                                   (popup . (accented)))
-        modus-themes-diffs 'desaturated
-        modus-themes-headings '((1 . (1.2))
-                                (2 . (rainbow 1.1))
-                                (3 . (1))
-                                (t . (monochrome)))
-        modus-themes-hl-line '(nil)
-        modus-themes-links '(nil)
-        modus-themes-mixed-fonts nil
-        modus-themes-mode-line '(moody borderless accented)
-        modus-themes-tabs-accented t
-        modus-themes-prompts '(background)
-        modus-themes-region '(accented bg-only)
-        modus-themes-syntax '(faint)
-        modus-themes-tabs-accented nil
-        )
-  (setq modus-themes-org-agenda
-        '((header-date . (grayscale workaholic bold-today))
-          (header-block . (1.5 semibold))
-          (scheduled . uniform)
-          (event . (italic))
-          (habit . traffic-light)))
-  (modus-themes-load-themes)
+                                   (selection . (semibold accented intense)))
+        modus-themes-org-blocks 'gray-background
+        modus-themes-variable-pitch-ui t)
+  (setq modus-themes-common-palette-overrides
+        '((border-mode-line-active unspecified)
+          (border-mode-line-inactive unspecified)
+          (fringe unspecified)
+          (underline-link border)
+          (underline-link-visited border)
+          (underline-link-symbolic border)
+          (bg-region bg-ochre)
+          (fg-region unspecified)
+          (bg-tab-bar bg-main)
+          (date-event fg-main)
+          (bg-tab-current bg-inactive)
+          (bg-tab-other bg-dim)))
+  (setq modus-themes-headings
+      '((t . (1.1))))
   :config
-  (modus-themes-load-operandi)
-  :bind ("<f5>" . modus-themes-toggle))
+  (load-theme 'modus-operandi-tinted :no-confirm))
 
-(set-face-attribute 'default nil :family "Input Mono Compressed" :height 120)
+(setq tab-bar-mode t)
+(setq tab-bar-show t)
+(setq tab-bar-close-button nil)
+(setq tab-bar-new-button nil)
+(setq tab-bar-tab-name-format-function #'fk--tab-bar-tab-name-format)
+(setq tab-bar-separator "   ")
+;; dirty hack to get more space underneath the tab bar.
+;; disadvantage is that tab-bar-line cannot be used anymore.
+(defvar tab-bar-extra-space nil)
 
+(if tab-bar-extra-space
+    (progn
+      (setq-default tab-line-format " ")
+      (global-tab-line-mode)))
+
+(defun fk--tab-bar-tab-name-format (tab i)
+  (let ((current-p (eq (car tab) 'current-tab)))
+    (propertize
+     (concat
+      (propertize " " 'display '(space :width (8)))
+      (alist-get 'name tab)
+      (propertize " " 'display '(space :width (8))))
+     'face (funcall tab-bar-tab-face-function tab))))
+
+(defun my-modus-themes-tab-bar-faces ()
+  (modus-themes-with-colors
+    (set-face-attribute 'tab-bar nil :weight 'light :inherit `(variable-pitch default) :box `(:line-width (8 . 5) :color nil :style flat-button))
+    (set-face-attribute 'tab-bar-tab nil :weight 'light) ; :underline `(:color ,fg-dim :position 0))
+    (set-face-attribute 'header-line nil :background bg-main)))
+
+(my-modus-themes-tab-bar-faces)
+(add-hook 'modus-themes-after-load-theme-hook #'my-modus-themes-tab-bar-faces)
+
+(setq frame-title-format nil)
+;;'((:eval (format "%s" (cdr (assoc 'name (tab-bar--current-tab)))))))
+(setq-default ns-use-proxy-icon nil)
+
+(set-face-attribute 'default nil :family "Roboto Mono" :height 120)
+;; (set-face-attribute 'default nil
+;;                     :family "Roboto Mono" :weight 'light :height 140)
+;; (set-face-attribute 'bold nil
+;;                     :family "Roboto Mono" :weight 'regular)
+;; (set-face-attribute 'italic nil
+;;                     :family "Victor Mono" :weight 'semilight :slant 'italic)
+
+(set-face-attribute 'variable-pitch nil :family "SF Pro" :height 1.0 :weight 'light)
 (setq-default fill-column 90)
 
 (use-package fontawesome)
@@ -228,6 +263,9 @@
   (dirvish-attributes '(all-the-icons collapse subtree-state vc-state git-msg))
   :config
   (setq dired-dwim-target t)
+  (setq dirvish-mode-line-height 24)
+  (setq dirvish-header-line-height 24)
+  (setq dirvish-use-header-line nil) ;; works better with tab bar
   (setq delete-by-moving-to-trash t)
   ;; Enable mouse drag-and-drop files to other applications
   (setq dired-mouse-drag-files t)                   ; added in Emacs 29
@@ -381,8 +419,7 @@
 (add-to-list 'load-path (expand-file-name "org-mac-link" "~/.emacs.d/gitrepos"))
 (require 'org-mac-link)
 (add-hook 'org-mode-hook (lambda ()
-(define-key org-mode-map (kbd "C-c g") 'org-mac-link-get-link)))
-
+  (define-key org-mode-map (kbd "C-c g") 'org-mac-link-get-link)))
 (org-add-link-type "message" 'org-mac-message-open)
 
 (defun org-mac-message-open (message-id)
@@ -390,13 +427,13 @@
    This will use the command `open' with the message URL."
   (browse-url (concat "message://%3c" (substring message-id 2) "%3e")))
 
-(setq org-capture-template
+(setq org-capture-templates
       (append org-capture-templates
               '(("e" "Mail" entry (file+headline "~/org/inbox.org" "Mail")
-                 "* TODO  %(org-mac-message-get-links \"s\") %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
+                 "* TODO  %(org-mac-link-mail-get-links \"s\") :mail: \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
                  :empty-lines 1))))
 
-(setq org-capture-template
+(setq org-capture-templates
       (append org-capture-templates
               '(("l" "Link" entry (file+headline "~/org/bookmarks.org" "Bookmarks")
                  "* %(org-cliplink-capture) %^g \n:PROPERTIES:\n:CREATED: %U\n:END:\n\n%?"
@@ -416,33 +453,129 @@
 (add-hook 'org-agenda-mode-hook 'org-super-agenda-mode)
 
 (setq org-agenda-search-view-always-boolean t
-      org-agenda-block-separator (propertize
-                                  (make-string (frame-width) ?\u2594)
-                                  'face '(:foreground "grey38"))
-      org-super-agenda-header-separator ""
+      org-agenda-block-separator " "
       org-habit-show-habits-only-for-today nil
       org-agenda-restore-windows-after-quit t
       org-agenda-show-future-repeats nil
+      org-tags-column 1
+      org-agenda-tags-column 0
+      org-use-property-inheritance t
       org-deadline-warning-days 2
-      org-agenda-window-setup 'current
-      org-agenda-span 'day
+      org-agenda-window-setup 'current-window 
       org-agenda-start-on-weekday 1 ;; nil
       org-agenda-skip-deadline-prewarning-if-scheduled t
       org-agenda-skip-scheduled-if-done t
       org-agenda-skip-deadline-if-done t
+      org-agenda-sticky t
       org-agenda-format-date "\n%A, %-e %B %Y"
+      org-agenda-category-icon-alist nil
+      org-agenda-current-time-string " now"
+      org-agenda-show-current-time-in-grid t
       org-agenda-dim-blocked-tasks t)
 
+;; this ugly hack is necessary, because org-agenda-current-time's face
+;; requires two spaces prior to the time indication. There is also no way
+;; to just org-agenda-current-time-string.
+(add-hook 'org-agenda-finalize-hook
+      (lambda () (highlight-phrase " now" 'org-date)))
+
+(setq org-agenda-time-grid
+      '((daily today require-timed)
+        ()
+        "......" "----------------"))
+
+(defvar my/org-agenda-update-delay 60)
+(defvar my/org-agenda-update-timer nil)
+
+(defun my/org-agenda-update ()
+  "Refresh daily agenda view"
+  
+  (when my/org-agenda-update-timer
+    (cancel-timer my/org-agenda-update-timer))
+  
+  (let ((window (get-buffer-window "*Org Agenda(a)*" t)))
+    (when window
+      (with-selected-window window
+        (let ((inhibit-message t))
+          (org-agenda-redo)))))
+
+  (setq my/org-agenda-update-timer
+    (run-with-idle-timer
+     (time-add (current-idle-time) my/org-agenda-update-delay)
+     nil
+     'my/org-agenda-update)))
+
+(run-with-idle-timer my/org-agenda-update-delay t 'my/org-agenda-update)
+
+(setq org-agenda-remove-tags t)
+
+(setq org-agenda-prefix-format
+      '((agenda . "%?-12t");"%?-12t")
+        (todo .   "%i")
+        (tags .   "%i")
+        (search . "%i")))
+
+(setq org-agenda-sorting-strategy
+      '((agenda habit-down deadline-down scheduled-down todo-state-up time-up
+                priority-down category-keep)
+        (todo   priority-down category-keep)
+        (tags   timestamp-up priority-down category-keep)
+        (search category-keep)))
+
+(require 'svg-lib)
+(require 'svg-tag-mode)
+
+(defun my/org-agenda-custom-date ()
+  (interactive)
+  (let* ((timestamp (org-entry-get nil "TIMESTAMP"))
+         (timestamp (or timestamp (org-entry-get nil "DEADLINE"))))
+    (if timestamp
+        (let* ((delta (- (org-time-string-to-absolute (org-read-date nil nil timestamp))
+                         (org-time-string-to-absolute (org-read-date nil nil ""))))
+               (delta (/ (+ 1 delta) 30.0))
+               (face (cond ;; ((< delta 0.25) 'nano-popout)
+                           ;; ((< delta 0.50) 'nano-salient)
+                           ((< delta 1.00) 'default)
+                           (t 'default))))
+          (concat
+           (propertize " " 'face nil
+                       'display (svg-lib-progress-pie
+                                 delta nil
+                                 :background (face-background face nil 'default)
+                                 :foreground (face-foreground face)
+                                 :margin 0 :stroke 2 :padding 1))
+           " "
+           (propertize
+            (format-time-string "%d/%m" (org-time-string-to-time timestamp))
+            'face 'default)))
+      "     ")))
+
 (setq org-agenda-custom-commands
-      '(("d" "Dagelijkse Takenlijst"
-         ((agenda ""
-                  ((org-agenda-overriding-header " Planner")
-                   (org-agenda-prefix-format '((agenda . " %?-12t")))
-                   (org-agenda-span 'day)
-                   (org-deadline-warning-days 0)
-                   (org-super-agenda-groups
+      '(("a" "Agenda"
+         (
+          (agenda ""
+                  ((org-agenda-span 'week)
+                  (org-deadline-warning-days 0)
+                  (org-super-agenda-groups
                     '((:name "" :time-grid t :scheduled t :deadline t :category "verjaardag")
                       (:discard (:anything t))))))))))
+
+(add-to-list 'org-agenda-custom-commands
+             '("x" "Tasks"
+         ((tags "+meeting+TIMESTAMP>=\"<now>\""
+                 ((org-agenda-span 90)
+                  (org-agenda-max-tags 10)
+                  (org-agenda-prefix-format '((tags   . "%(my/org-agenda-custom-date) ")))
+                  (org-agenda-overriding-header " Upcoming meetings\n")))
+         (tags "DEADLINE>=\"<today>\""
+               ((org-agenda-span 90)
+                (org-agenda-max-tags 10)
+                (org-agenda-prefix-format '((tags .  "%(my/org-agenda-custom-date) ")))
+                (org-agenda-overriding-header " Upcoming deadlines\n"))))))
+      
+(add-to-list 'load-path (expand-file-name "org-agenda-property" "~/.emacs.d/gitrepos"))
+(require 'org-agenda-property)
+(setq org-agenda-property-list '("GROUP"))
 
 (org-super-agenda--def-auto-group category "their org-category property"
   :key-form (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
@@ -472,10 +605,11 @@
                     (:name " Priority A reading" :priority "A")
                     (:name " Priority B reading" :priority "B")
                     (:name " Priority C reading" :priority "C")
-                     (:discard (:anything t)))))))))))
+                    (:discard (:anything t)))))))))))
 
 (defun format-closed-query ()
   (format "+TODO=\"DONE\"+CLOSED>=\"<-%sd>\"" (read-string "Number of days: ")))
+
 (setq org-agenda-custom-commands (append org-agenda-custom-commands
         '(("w" "Weekly review"
          ((tags (format-closed-query)
@@ -499,18 +633,31 @@
 (use-package calfw)
 (use-package calfw-org)
 
+;; Interesting package. Will follow development
+;; (add-to-list 'load-path "~/.emacs.d/gitrepos/calfw-blocks")
+;; (require 'calfw-blocks)
+;; (setq calfw-blocks-earliest-visible-time '(8 0))
+;; (setq calfw-blocks-lines-per-hour 2)
+
+;; (defun my-open-calendar-agenda ()
+;;   (interactive)
+;;   (cfw:open-calendar-buffer
+;;    :contents-sources
+;;    (list
+;;     (cfw:org-create-source "medium purple"))
+;;    :view 'block-week))
+
+(add-to-list 'load-path (expand-file-name "org-agenda-dashboard" "~/.emacs.d/gitrepos"))
+(require 'org-agenda-dashboard)
+
 (defun side-by-side-agenda-view ()
   (progn
-    (org-agenda nil "a")
-    (split-window-right)
-    (org-agenda-redo)
-    (split-window-below)
+    (org-agenda-dashboard)
     (other-window 1)
-    (cfw:open-org-calendar)
-    (setq org-agenda-sticky t)
-    (other-window 1)
-    (org-agenda nil "p")
-    (setq org-agenda-sticky nil)))
+    (org-agenda nil "a") ; weekly view
+    (org-agenda nil "x") ; task view in side bar
+    ))
+    ;; (setq org-agenda-sticky nil)))
 
 (defun show-my-agenda ()
   (interactive)
@@ -755,6 +902,7 @@
 
 (use-package jupyter
   :after org
+  :defer t
   :config
   (setq org-babel-python-command "python3")
   (setq org-confirm-babel-evaluate nil)
@@ -792,16 +940,7 @@
 
 (use-package deadgrep
   :bind*
-  (("C-c r" . deadgrep)
-   ("C-c f" . grep-org-files))
-  :config
-  (defun grep-org-files (words)
-    (interactive "sSearch org files: ")
-    (let ((default-directory org-directory)
-          (deadgrep--file-type '(glob . "*.org"))
-          (deadgrep--context '(1 . 1))
-          (deadgrep--search-type 'regexp))
-      (deadgrep words))))
+  (("C-c r" . deadgrep)))
 
 (use-package terminal-here
   :config
