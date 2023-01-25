@@ -572,12 +572,13 @@
          ((tags "+meeting+TIMESTAMP>=\"<now>\""
                  ((org-agenda-span 90)
                   (org-agenda-max-tags 10)
-                  (org-agenda-prefix-format '((tags   . "%(my/org-agenda-custom-date) ")))
+                  (org-agenda-skip-entry-if 'deadline)
+                  (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
                   (org-agenda-overriding-header " Upcoming meetings\n")))
          (tags "DEADLINE>=\"<today>\""
                ((org-agenda-span 90)
-                (org-agenda-max-tags 10)
-                (org-agenda-prefix-format '((tags .  "%(my/org-agenda-custom-date) ")))
+                (org-agenda-max-entries 10)
+                (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
                 (org-agenda-overriding-header " Upcoming deadlines\n"))))))
       
 (add-to-list 'load-path (expand-file-name "org-agenda-property" "~/.emacs.d/gitrepos"))
@@ -680,8 +681,6 @@
 (use-package org-roam
   :init 
   (setq org-roam-v2-ack t)
-  :hook
-  (after-init . org-roam-mode)
   :custom
   (org-roam-directory (file-truename "~/kaartenbak"))
   :bind (("C-c o l" . org-roam-buffer-toggle)
@@ -964,22 +963,22 @@
       (comment-dwim nil))))
 
 (defun new-scratch-pad ()
-"Create a new org-mode buffer for random stuff."
-(interactive)
-(let ((tab-bar-index (tab-bar--tab-index-by-name "Kladblok")))
-  (if tab-bar-index
+  "Create a new org-mode buffer for random stuff."
+  (interactive)
+  (let ((tab-bar-index (tab-bar--tab-index-by-name "Kladblok")))
+    (if tab-bar-index
+        (progn
+          (tab-bar-select-tab (+ tab-bar-index 1))
+          (switch-to-buffer "kladblok")
+          (olivetti-mode t))
       (progn
-        (tab-bar-select-tab (+ tab-bar-index 1))
-        (switch-to-buffer "kladblok")
-        (olivetti-mode t))
-    (progn
-      (tab-bar-new-tab)
-      (tab-bar-rename-tab "Kladblok")
-      (let ((buffer (generate-new-buffer "kladblok")))
-        (switch-to-buffer buffer)
-        (setq buffer-offer-save t)
-        (org-mode)
-        (olivetti-mode t))))))
+        (tab-bar-new-tab)
+        (tab-bar-rename-tab "Kladblok")
+        (let ((buffer (generate-new-buffer "kladblok")))
+          (switch-to-buffer buffer)
+          (setq buffer-offer-save t)
+          (org-mode)
+          (olivetti-mode t))))))
 
 (defun xah-unfill-paragraph ()
   (interactive)
@@ -1021,6 +1020,7 @@
 (define-key global-map "\C-ca" 'org-agenda)
 (define-key global-map (kbd "C-c M-a") 'show-my-agenda)
 (global-set-key (kbd "C-x C-b") 'tab-bar-select-tab-by-name)
+
 
 (use-package server
   :config
