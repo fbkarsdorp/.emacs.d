@@ -5,6 +5,12 @@
 (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 10 1024 1024))))
 
 (setq inhibit-startup-message t)
+(defvar scratch-messages
+  '("# There's a crack in everything. That's how the light gets in."
+    "# Things don't become traditions because they're good, BoJack.\n# They become good because they're traditions. -- Todd Chavez"
+    ))
+(setq initial-scratch-message (nth (random (length scratch-messages)) scratch-messages))
+
 
 (prefer-coding-system 'utf-8)
 
