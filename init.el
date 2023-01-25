@@ -36,7 +36,8 @@
 
 (setq default-frame-alist '((ns-transparent-titlebar . t)
                             ;; (undecorated-round . t)
-                            (height . 47) (width . 180)))
+                            (height . 50) (width . 190)
+                            (top . 0.5) (left . 0.5)))
                             ;; (internal-border-width . 18)))
 
 (tool-bar-mode -1)
