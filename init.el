@@ -143,14 +143,21 @@
 (use-package fontawesome)
 (use-package all-the-icons)
 
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
 (use-package ivy
   :init (ivy-mode 1)
   :config
   (setq ivy-use-virtual-buffers t
         enable-recursive-minibuffers t
         ivy-display-style 'fancy
-        ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
-                                (t . ivy--regex-plus)))
+        ;; ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
+        ;;                         (t . ivy--regex-plus)))
+        ivy-re-builders-alist '((t . orderless-ivy-re-builder)))
+  (add-to-list 'ivy-highlight-functions-alist '(orderless-ivy-re-builder . orderless-ivy-highlight))
   :bind (("C-s" . 'swiper-isearch)
          ("C-r" . 'swiper-backward)))
 
@@ -169,12 +176,12 @@
         "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
   (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
 
-(use-package prescient
-  :config
-  (prescient-persist-mode))
+;; (use-package prescient
+;;   :config
+;;   (prescient-persist-mode))
 
-(use-package ivy-prescient
-  :config (ivy-prescient-mode))
+;; (use-package ivy-prescient
+;;   :config (ivy-prescient-mode))
 
 (use-package ivy-hydra)
 
@@ -894,8 +901,8 @@
   :bind (:map company-active-map ("<tab>" . company-complete-selection))
   (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common)))
 
-(use-package company-prescient
-  :config (company-prescient-mode))
+;; (use-package company-prescient
+;;   :config (company-prescient-mode))
 
 (use-package lsp-pyright
   :ensure t
@@ -1021,6 +1028,19 @@
 (define-key global-map (kbd "C-c M-a") 'show-my-agenda)
 (global-set-key (kbd "C-x C-b") 'tab-bar-select-tab-by-name)
 
+(defvar my-keys-minor-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "M-}") 'tab-bar-switch-to-next-tab)
+    (define-key map (kbd "M-{") 'tab-bar-switch-to-prev-tab)
+    map)
+  "my-keys-minor-mode keymap.")
+
+(define-minor-mode my-keys-minor-mode
+  "A minor mode so that my key settings override annoying major modes."
+  :init-value t
+  :lighter " my-keys")
+
+(my-keys-minor-mode 1)
 
 (use-package server
   :config
