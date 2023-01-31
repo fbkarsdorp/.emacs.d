@@ -148,42 +148,69 @@
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles basic partial-completion)))))
 
-(use-package ivy
-  :init (ivy-mode 1)
+(use-package vertico
+  :init (vertico-mode))
+
+(setq minibuffer-prompt-properties
+      '(read-only t cursor-intangible t face minibuffer-prompt))
+(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+(setq enable-recursive-minibuffers t)
+
+(use-package savehist
+  :init (savehist-mode))
+
+(use-package marginalia
+  :init (marginalia-mode))
+
+;; Example configuration for Consult
+(use-package consult
+  ;; Replace bindings. Lazily loaded due by `use-package'.
+  :bind (;; C-c bindings (mode-specific-map)
+         ("C-c M-x" . consult-mode-command)
+         ("C-c h" . consult-history)
+         ;; C-x bindings (ctl-x-map)
+         ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+         ;; M-g bindings (goto-map)
+         ("M-g g" . consult-goto-line)             ;; orig. goto-line
+         ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+         ("M-g i" . consult-imenu)
+         ;; M-s bindings (search-map)
+         ("M-s d" . consult-find)
+         ("M-s D" . consult-locate)
+         ("M-s g" . consult-grep)
+         ("M-s r" . consult-ripgrep)
+         ("M-s l" . consult-line)
+         ("M-s L" . consult-line-multi))
+
+  :hook (completion-list-mode . consult-preview-at-point-mode)
   :config
-  (setq ivy-use-virtual-buffers t
-        enable-recursive-minibuffers t
-        ivy-display-style 'fancy
-        ;; ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
-        ;;                         (t . ivy--regex-plus)))
-        ivy-re-builders-alist '((t . orderless-ivy-re-builder)))
-  (add-to-list 'ivy-highlight-functions-alist '(orderless-ivy-re-builder . orderless-ivy-highlight))
-  :bind (("C-s" . 'swiper-isearch)
-         ("C-r" . 'swiper-backward)))
+  ;; Optionally configure preview. The default value
+  ;; is 'any, such that any key triggers the preview.
+  ;; (setq consult-preview-key 'any)
+  ;; (setq consult-preview-key (kbd "M-."))
+  ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+  (consult-customize
+   consult-theme :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   ;; :preview-key (kbd "M-.")
+   :preview-key '(:debounce 0.4 any)))
 
-(use-package counsel
-  :init (counsel-mode t)
-  :bind (("C-x C-r" . 'counsel-recentf)
-         ("C-c i" . 'counsel-imenu)
-         ("C-c c" . 'counsel-org-capture)
-         ("C-x b" . 'ivy-switch-buffer))
-  :config
-  (setq counsel-grep-base-command "grep -niE %s %s")
-  (setq counsel-grep-base-command
-        ;; "ag --nocolor --nogroup %s %s")
-        "rg -S -M 120 --no-heading --line-number --color never %s %s")
-  (setq counsel-find-file-occur-cmd
-        "gls -a | grep -i -E '%s' | gxargs -d '\\n' gls -d --group-directories-first")
-  (setq counsel-locate-cmd 'counsel-locate-cmd-mdfind))
+(use-package embark
+  :bind (("C-." . embark-act)         ;; pick some comfortable binding
+         ("C-;" . embark-dwim)        ;; good alternative: M-.
+         ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+  :init (setq prefix-help-command #'embark-prefix-help-command)
 
-;; (use-package prescient
-;;   :config
-;;   (prescient-persist-mode))
+  :config (add-to-list 'display-buffer-alist
+                       '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                         nil
+                         (window-parameters (mode-line-format . none)))))
 
-;; (use-package ivy-prescient
-;;   :config (ivy-prescient-mode))
-
-(use-package ivy-hydra)
+(use-package embark-consult
+  :hook (embark-collect-mode . consult-preview-at-point-mode))
 
 (use-package which-key
   :diminish
@@ -337,29 +364,26 @@
 (use-package projectile
   :diminish
   :config
-  (setq projectile-completion-system 'ivy)
   (setq projectile-switch-project-action #'projectile-dired)
   :bind (:map projectile-mode-map
               ("C-c p" . projectile-command-map))
-  :init (projectile-mode +1))
+  :init (projectile-mode +1)
+  :bind ((:map projectile-mode-map
+               ("C-c p k" . projectile-kill-buffers-and-enclosing-tab)
+               ("C-c p p" . switch-to-project-in-dedicated-tab))))
 
-(defun projectile-name-tab-by-project-name-or-default ()
-  (let ((project-name (projectile-project-name)))
-    (if (string= "-" project-name)
-        (tab-bar-tab-name-current)
-      project-name)))
-
-(setq tab-bar-tab-name-function #'projectile-name-tab-by-project-name-or-default)
-
-(defun counsel-projectile-switch-project-action-dired-new-tab (project)
-  (let* ((project-name (file-name-nondirectory (directory-file-name project)))
+(defun switch-to-project-in-dedicated-tab ()
+  "Open or switch to project in a dedicated tab."
+  (interactive)
+  (let* ((project-root (projectile-completing-read "Switch to project: " projectile-known-projects))
+         (project-name (projectile-project-name project-root))
          (tab-bar-index (tab-bar--tab-index-by-name project-name)))
     (if tab-bar-index
         (tab-bar-select-tab (+ tab-bar-index 1))
       (progn
         (tab-bar-new-tab)
-        (let ((projectile-switch-project-action 'projectile-dired))
-          (counsel-projectile-switch-project-by-name project))
+        (let ((projectile-switch-project-action 'projectile-find-file))
+          (projectile-switch-project-by-name project-root))
         (dirvish-side)))))
 
 (defun projectile-kill-buffers-and-enclosing-tab ()
@@ -371,16 +395,13 @@
       (tab-bar-switch-to-recent-tab)
       (tab-bar-close-tab (+ tab-bar-index 1)))))
 
-(use-package counsel-projectile
-  :after projectile
-  :init (counsel-projectile-mode)
-  :config
-  ;; I want projectile to open dired upon selecting a project. 
-  (counsel-projectile-modify-action
-   'counsel-projectile-switch-project-action
-   '((add ("T" counsel-projectile-switch-project-action-dired-new-tab "open in new tab") 1)))
-  :bind (:map projectile-mode-map
-              ("C-c p k" . projectile-kill-buffers-and-enclosing-tab)))
+(defun projectile-name-tab-by-project-name-or-default ()
+  (let ((project-name (projectile-project-name)))
+    (if (string= "-" project-name)
+        (tab-bar-tab-name-current)
+      project-name)))
+
+(setq tab-bar-tab-name-function #'projectile-name-tab-by-project-name-or-default)
 
 (use-package magit
   :config
@@ -399,10 +420,6 @@
                         (lambda (f) (concat (file-name-as-directory org-directory) f))
                         my-agenda-files)
       org-default-notes-file (concat (file-name-as-directory org-directory) "notes.org"))
-
-(mapc (lambda (item)
-        (setf (alist-get item ivy-initial-inputs-alist) ""))
-      '(org-refile org-agenda-refile org-capture-refile))
 
 (setq org-refile-use-outline-path 'file
       org-outline-path-complete-in-steps nil
@@ -804,41 +821,65 @@
 (use-package bibtex
   :mode (("\\.bib\\'" . bibtex-mode)))
 
-(use-package ivy-bibtex
-  :bind*
-  ("C-c C-r" . ivy-bibtex)
-  :config
-  (setq bibtex-completion-bibliography "~/org/bib.bib")
-  (setq bibtex-completion-pdf-field "File")
-  (setq bibtex-completion-pdf-open-function 'bibtex-pdf-open-function)
-  (setq ivy-bibtex-default-action #'ivy-bibtex-insert-citation)
-  (setq bibtex-completion-display-formats '((t . "${author:36} ${title:*} ${year:4} ${=type=:7}")))
-  (setq bibtex-completion-format-citation-functions
-        '((org-mode      . bibtex-completion-format-citation-org-cite)
-          (latex-mode    . bibtex-completion-format-citation-cite)
-          (markdown-mode . bibtex-completion-format-citation-pandoc-citeproc)
-          (default       . bibtex-completion-format-citation-default)))
-  (ivy-bibtex-ivify-action add-to-reading-list ivy-bibtex-add-to-reading-list)
-  (ivy-bibtex-ivify-action show-pdf-in-finder ivy-bibtex-show-pdf-in-finder)
-  (ivy-bibtex-ivify-action read-on-remarkable ivy-bibtex-read-on-remarkable)
-  (ivy-add-actions 'ivy-bibtex '(("R" ivy-bibtex-add-to-reading-list "add to reading list")))
-  (ivy-add-actions 'ivy-bibtex '(("F" ivy-bibtex-show-pdf-in-finder "show in finder")))
-  (ivy-add-actions 'ivy-bibtex '(("M" ivy-bibtex-read-on-remarkable "read on remarkable"))))
+(use-package citar
+  :bind (("C-c b" . citar-insert-citation)
+         ("C-c C-r" . citar-open)
+         ;; :map org-mode-map :package org
+         ;; ("C-c b" . #'org-cite-insert)  ;; is this really needed?
+         :map minibuffer-local-map
+         ("M-b" . citar-insert-preset))
+  :custom
+  (org-cite-insert-processor 'citar)
+  (org-cite-follow-processor 'citar)
+  (org-cite-activate-processor 'citar)
+  (citar-bibliography '("~/org/bib.bib")))
 
-(defun add-to-reading-list (keys &optional fallback-action)
-  (let ((link (bibtex-completion-format-citation-org-title-link-to-PDF keys)))
+(setq citar-symbols
+      `((file ,(all-the-icons-faicon "file-o" :face 'all-the-icons-green :v-adjust -0.1) . " ")
+        (note ,(all-the-icons-material "speaker_notes" :face 'all-the-icons-blue :v-adjust -0.3) . " ")
+        (link ,(all-the-icons-octicon "link" :face 'all-the-icons-orange :v-adjust 0.01) . " ")))
+(setq citar-symbol-separator "  ")
+
+(use-package citar-embark
+  :after citar embark
+  :config
+  (citar-embark-mode)
+  (define-key citar-embark-map (kbd "M") 'citar-read-on-remarkable)
+  (define-key citar-embark-map (kbd "R") 'citar-add-to-reading-list)
+  (define-key citar-embark-map (kbd "F") 'citar-show-pdf-in-finder)
+  (add-to-list 'citar-file-open-functions '("pdf" . citar-file-open-external))
+  (add-to-list 'embark-multitarget-actions #'citar-show-pdf-in-finder)
+  (add-to-list 'embark-multitarget-actions #'citar-read-on-remarkable))
+
+(defun citar-read-on-remarkable (citekey-or-citekeys)
+  "Add the PDF of the entry associated with CITEKEYS to Remarkable."
+  (interactive (list (citar-select-refs)))
+  (dolist (citekey citekey-or-citekeys)
+    (let ((file (citar-get-value "file" citekey)))
+      (call-process "rmapi" nil 0 nil "put" file))))
+
+(defun citar-add-to-reading-list (citekey)
+  "Capture entry and add to your reading list."
+  (interactive (list (citar-select-ref)))
+  (let ((link (format-pdf-path-as-org-link citekey)))
     (kill-new link)
     (org-capture nil "r")))
 
-(defun read-on-remarkable (keys &optional fallback-action)
-  (let ((fpath (car (bibtex-completion-find-pdf (car keys)))))
-    (call-process "rmapi" nil 0 nil "put" fpath)))
+(defun format-pdf-path-as-org-link (citekey)
+  (let* ((entry (citar-get-entry citekey))
+         (title (citar-get-value "title" entry))
+         (file (citar-get-value "file" entry)))
+    (format "[[%s][%s]]" file title)))
 
-(defun bibtex-pdf-open-function (fpath)
-  (call-process "open" nil 0 nil "-a" "/Applications/Skim.app" fpath))
+(defun citar-show-pdf-in-finder (citekey-or-citekeys)
+  "Open the directory associated with CITEKEY in finder."
+  (interactive (list (citar-select-refs)))
+  (dolist (citekey citekey-or-citekeys)
+    (let ((file (citar-get-value "file" citekey)))
+      (citar-open-dir file))))
 
-(defun show-pdf-in-finder (keys &optional fallback-action)
-  (let ((dir (file-name-directory (car (bibtex-completion-find-pdf (car keys))))))
+(defun citar-open-dir (file)
+  (let ((dir (file-name-directory file)))
     (cond
      ((> (length dir) 1)
       (shell-command (concat "open " dir)))
@@ -846,7 +887,10 @@
       (message "No PDF(s) found for this entry: %s" key)))))
 
 (use-package pdf-tools
-  :config (setq pdf-view-use-scaling t))
+  :mode ("\\.pdf\\'" . pdf-view-mode)
+  :config
+  (pdf-tools-install)
+  (setq pdf-view-use-scaling t))
 
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
@@ -901,8 +945,8 @@
   :bind (:map company-active-map ("<tab>" . company-complete-selection))
   (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common)))
 
-;; (use-package company-prescient
-;;   :config (company-prescient-mode))
+(use-package company-prescient
+  :config (company-prescient-mode))
 
 (use-package lsp-pyright
   :ensure t
@@ -1027,6 +1071,7 @@
 (define-key global-map "\C-ca" 'org-agenda)
 (define-key global-map (kbd "C-c M-a") 'show-my-agenda)
 (global-set-key (kbd "C-x C-b") 'tab-bar-select-tab-by-name)
+(global-set-key (kbd "C-c c") 'org-capture)
 
 (defvar my-keys-minor-mode-map
   (let ((map (make-sparse-keymap)))
