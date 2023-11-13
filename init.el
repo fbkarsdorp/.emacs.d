@@ -8,9 +8,9 @@
 (defvar scratch-messages
   '("# There's a crack in everything. That's how the light gets in."
     "# Things don't become traditions because they're good, BoJack.\n# They become good because they're traditions. -- Todd Chavez"
+    "# Het zijn niet altijd mensen die ons vertellen wat menselijkheid is."
     ))
 (setq initial-scratch-message (nth (random (length scratch-messages)) scratch-messages))
-
 
 (prefer-coding-system 'utf-8)
 
@@ -23,7 +23,7 @@
 (setq package-archives (append
 			package-archives
 			'(("melpa" . "https://melpa.org/packages/")
-                          ("elpa" . "https://elpa.nongnu.org/nongnu/"))))
+              ("elpa" . "https://elpa.nongnu.org/nongnu/"))))
 
 (eval-when-compile
   (require 'use-package)
@@ -34,17 +34,33 @@
 (use-package async
   :config (setq async-bytecomp-package-mode 1))
 
-(setq default-frame-alist '((ns-transparent-titlebar . t)
-                            ;; (undecorated-round . t)
-                            (height . 50) (width . 190)
-                            (top . 0.5) (left . 0.5)))
-                            ;; (internal-border-width . 18)))
+(setq default-frame-alist
+      (append (list
+               '(ns-transparent-titlebar . t)
+               '(undecorated-round . t)
+	           '(min-height . 1)
+               '(height     . 50)
+	           '(min-width  . 1)
+               '(width      . 190)
+               '(top        . 0.5)
+               '(left       . 0.5)
+               '(vertical-scroll-bars . nil)
+               '(internal-border-width . 24)
+               '(left-fringe    . 1)
+               '(right-fringe   . 1)
+               '(tool-bar-lines . 0)
+               '(menu-bar-lines . 0))))
+
+(setq window-divider-default-right-width 24)
+(setq window-divider-default-places 'right-only)
+(window-divider-mode 1)
+
 
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (tooltip-mode -1)
 
-(fringe-mode 16)
+;; (fringe-mode 16)
 
 (blink-cursor-mode nil)
 (setq-default cursor-type 'hbar)
@@ -78,6 +94,7 @@
         '((border-mode-line-active unspecified)
           (border-mode-line-inactive unspecified)
           (fringe unspecified)
+          ;; (fg-link fg-main)
           (underline-link border)
           (underline-link-visited border)
           (underline-link-symbolic border)
@@ -90,7 +107,7 @@
   (setq modus-themes-headings
       '((t . (1.1))))
   :config
-  (load-theme 'modus-operandi-tinted :no-confirm))
+  (load-theme 'modus-operandi :no-confirm))
 
 (setq tab-bar-mode t)
 (setq tab-bar-show t)
@@ -119,17 +136,33 @@
 (defun my-modus-themes-tab-bar-faces ()
   (modus-themes-with-colors
     (set-face-attribute 'tab-bar nil :weight 'light :inherit `(variable-pitch default) :box `(:line-width (8 . 5) :color nil :style flat-button))
-    (set-face-attribute 'tab-bar-tab nil :weight 'light) ; :underline `(:color ,fg-dim :position 0))
-    (set-face-attribute 'header-line nil :background bg-main)))
+    (set-face-attribute 'tab-bar-tab nil :weight 'light); :underline `(:color ,fg-dim :position 0))
+    (set-face-attribute 'header-line nil :background bg-main)
+    (set-face-attribute 'window-divider nil :foreground bg-main :background bg-main)
+    (set-face-attribute 'window-divider-first-pixel nil :foreground bg-main :background bg-main)
+    (set-face-attribute 'window-divider-last-pixel nil :foreground bg-main :background bg-main)))
 
 (my-modus-themes-tab-bar-faces)
 (add-hook 'modus-themes-after-load-theme-hook #'my-modus-themes-tab-bar-faces)
+
+;; (use-package ef-themes
+;;   :init
+;;   (setq ef-themes-common-palette-overrides
+;;         '((bg-tab-bar bg-main)
+;;           (bg-tab-current bg-inactive)
+;;           (bg-tab-other bg-dim))))
+
+;; (defvar after-load-theme-hook 'my-modus-themes-tab-bar-faces
+;;   "Hook run after a color theme is loaded using `load-theme'.")
+;; (defadvice load-theme (after run-after-load-theme-hook activate)
+;;   "Run `after-load-theme-hook'."
+;;   (run-hooks 'after-load-theme-hook))
 
 (setq frame-title-format nil)
 ;;'((:eval (format "%s" (cdr (assoc 'name (tab-bar--current-tab)))))))
 (setq-default ns-use-proxy-icon nil)
 
-(set-face-attribute 'default nil :family "Roboto Mono" :height 120)
+(set-face-attribute 'default nil :family "Roboto Mono" :height 140)
 ;; (set-face-attribute 'default nil
 ;;                     :family "Roboto Mono" :weight 'light :height 140)
 ;; (set-face-attribute 'bold nil
@@ -138,7 +171,7 @@
 ;;                     :family "Victor Mono" :weight 'semilight :slant 'italic)
 
 (set-face-attribute 'variable-pitch nil :family "SF Pro" :height 1.0 :weight 'light)
-(setq-default fill-column 90)
+(setq-default fill-column 80)
 
 (use-package fontawesome)
 (use-package all-the-icons)
@@ -149,7 +182,13 @@
   (completion-category-overrides '((file (styles basic partial-completion)))))
 
 (use-package vertico
-  :init (vertico-mode))
+  :init (vertico-mode)
+  :config
+  (vertico-multiform-mode)
+  (setq vertico-multiform-commands
+        '((consult-info buffer)
+          (consult-ripgrep buffer)
+          (citar-open buffer))))
 
 (setq minibuffer-prompt-properties
       '(read-only t cursor-intangible t face minibuffer-prompt))
@@ -162,9 +201,7 @@
 (use-package marginalia
   :init (marginalia-mode))
 
-;; Example configuration for Consult
 (use-package consult
-  ;; Replace bindings. Lazily loaded due by `use-package'.
   :bind (;; C-c bindings (mode-specific-map)
          ("C-c M-x" . consult-mode-command)
          ("C-c h" . consult-history)
@@ -184,18 +221,18 @@
 
   :hook (completion-list-mode . consult-preview-at-point-mode)
   :config
-  ;; Optionally configure preview. The default value
-  ;; is 'any, such that any key triggers the preview.
-  ;; (setq consult-preview-key 'any)
-  ;; (setq consult-preview-key (kbd "M-."))
-  ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+  ;; ;; Optionally configure preview. The default value
+  ;; ;; is 'any, such that any key triggers the preview.
+  ;; ;; (setq consult-preview-key 'any)
+  ;; ;; (setq consult-preview-key (kbd "M-."))
+  ;; ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
   (consult-customize
    consult-theme :preview-key '(:debounce 0.2 any)
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
-   ;; :preview-key (kbd "M-.")
+   ;; :preview-key (kbd "M-.")))
    :preview-key '(:debounce 0.4 any)))
 
 (use-package embark
@@ -347,9 +384,10 @@
   (setq recentf-exclude '("COMMIT_MSG" "COMMIT_EDITMSG" "github.*txt$"
                           "[0-9a-f]\\{32\\}-[0-9a-f]\\{32\\}\\.org"
                           ".*png$" ".*cache$"))
-  (setq recentf-max-saved-items 500))
+  (setq recentf-max-saved-items 500)
+  :init (recentf-mode))
 
-(save-place-mode 1)
+;; (save-place-mode 1)
 
 (use-package tramp
   :ensure nil
@@ -357,8 +395,6 @@
   :config
   (setq tramp-default-user "folgertk"
         tramp-default-method "ssh")
-  (use-package counsel-tramp
-    :bind ("C-c t" . counsel-tramp))
   (put 'temporary-file-directory 'standard-value '("/tmp")))
 
 (use-package projectile
@@ -414,7 +450,9 @@
 
 (use-package org :ensure org-contrib)
 
-(defvar my-agenda-files '("inbox.org" "projects.org" "habits.org" "agenda.org" "leeslijst.org"))
+
+(defvar my-agenda-files '("inbox.org" "projects.org" "habits.org" "agenda.org" "leeslijst.org"
+                          "chr.org" "mt.org" "oc.org" "students.org" "personal.org" "reviews.org" "exchange.org"))
 (setq org-directory "~/org"
       org-agenda-files (mapcar
                         (lambda (f) (concat (file-name-as-directory org-directory) f))
@@ -424,8 +462,8 @@
 (setq org-refile-use-outline-path 'file
       org-outline-path-complete-in-steps nil
       org-refile-allow-creating-parent-nodes 'confirm
-      org-refile-targets '((org-agenda-files :maxlevel . 2))
-      org-refile-targets '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")))
+      org-refile-targets '((org-agenda-files :maxlevel . 2)))
+      ;; org-refile-targets '(("projects.org" :regexp . "\\(?:\\(?:Note\\|Task\\)s\\)")))
 
 (setq org-todo-keywords '((sequence "TODO" "WAITING" "|" "DONE" "CANCELLED"))
       org-enforce-todo-dependencies t)
@@ -508,7 +546,13 @@
 ;; requires two spaces prior to the time indication. There is also no way
 ;; to just org-agenda-current-time-string.
 (add-hook 'org-agenda-finalize-hook
-      (lambda () (highlight-phrase " now" 'org-date)))
+          (lambda ()
+            (progn
+              (highlight-phrase " now" 'org-date)
+              ;; (highlight-phrase "Inbox opruimen" 'org-agenda-dimmed-todo-face)
+              ;; (highlight-phrase "Journaling" 'org-agenda-dimmed-todo-face)
+              (highlight-regexp ".* Inbox opruimen $" 'org-agenda-dimmed-todo-face)
+              (highlight-regexp ".* Journaling $" 'org-agenda-dimmed-todo-face))))
 
 (setq org-agenda-time-grid
       '((daily today require-timed)
@@ -595,15 +639,20 @@
              '("x" "Tasks"
          ((tags "+meeting+TIMESTAMP>=\"<now>\""
                  ((org-agenda-span 90)
-                  (org-agenda-max-tags 10)
+                  (org-agenda-max-tags 15)
                   (org-agenda-skip-entry-if 'deadline)
                   (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
                   (org-agenda-overriding-header " Upcoming meetings\n")))
-         (tags "DEADLINE>=\"<today>\""
-               ((org-agenda-span 90)
-                (org-agenda-max-entries 10)
-                (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
-                (org-agenda-overriding-header " Upcoming deadlines\n"))))))
+          (tags "DEADLINE>=\"<today>\""
+                ((org-agenda-span 90)
+                 (org-agenda-max-entries 15)
+                 (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
+                 (org-agenda-overriding-header " Upcoming deadlines\n")))
+          (tags "DEADLINE<\"<today>\"+TODO=\"TODO\""
+                ((org-agenda-span 90)
+                 (org-agenda-max-entries 15)
+                 (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
+                 (org-agenda-overriding-header " Overdue deadlines\n"))))))
       
 (add-to-list 'load-path (expand-file-name "org-agenda-property" "~/.emacs.d/gitrepos"))
 (require 'org-agenda-property)
@@ -662,22 +711,6 @@
             desired-window)))))
 
 (add-to-list 'display-buffer-alist (cons "\\*Calendar\\*" (cons #'fk-position-calendar-buffer nil)))
-(use-package calfw)
-(use-package calfw-org)
-
-;; Interesting package. Will follow development
-;; (add-to-list 'load-path "~/.emacs.d/gitrepos/calfw-blocks")
-;; (require 'calfw-blocks)
-;; (setq calfw-blocks-earliest-visible-time '(8 0))
-;; (setq calfw-blocks-lines-per-hour 2)
-
-;; (defun my-open-calendar-agenda ()
-;;   (interactive)
-;;   (cfw:open-calendar-buffer
-;;    :contents-sources
-;;    (list
-;;     (cfw:org-create-source "medium purple"))
-;;    :view 'block-week))
 
 (add-to-list 'load-path (expand-file-name "org-agenda-dashboard" "~/.emacs.d/gitrepos"))
 (require 'org-agenda-dashboard)
@@ -702,6 +735,17 @@
         (side-by-side-agenda-view)
         (message "Agenda loaded")))))
 
+(use-package org-mru-clock
+  :bind* (("C-c C-x i" . org-mru-clock-in)
+          ("C-c C-x C-j" . org-mru-clock-select-recent-task))
+  :config
+  (setq org-mru-clock-how-many 100)
+  (setq org-mru-clock-files #'org-agenda-files)
+  ;; TEST persistence org clocks
+  (setq org-clock-persist 'history)
+  (org-clock-persistence-insinuate)
+  (add-hook 'minibuffer-setup-hook #'org-mru-clock-embark-minibuffer-hook))
+
 (use-package org-roam
   :init 
   (setq org-roam-v2-ack t)
@@ -721,6 +765,8 @@
   (require 'org-roam-protocol)
   (require 'org-roam-export) ;; check whether this helps exporting
   (setq org-roam-dailies-directory "daily/")
+  ;; not sure about performance here, but it solves the export issue
+  (setq org-id-extra-files (directory-files-recursively "~/kaartenbak/" "org")) 
   (setq org-roam-dailies-capture-templates
       '(("d" "default" entry
          "* %?"
@@ -740,15 +786,39 @@
         org-roam-ui-browser-function #'browse-url-chromium
         org-roam-ui-open-on-start nil))
 
+;; (use-package consult-org-roam
+;;    :after org-roam
+;;    :init
+;;    (require 'consult-org-roam)
+;;    ;; Activate the minor mode
+;;    (consult-org-roam-mode 1)
+;;    :custom
+;;    ;; Use `ripgrep' for searching with `consult-org-roam-search'
+;;    (consult-org-roam-grep-func #'consult-ripgrep)
+;;    ;; Configure a custom narrow key for `consult-buffer'
+;;    (consult-org-roam-buffer-narrow-key ?r)
+;;    ;; Display org-roam buffers right after non-org-roam buffers
+;;    ;; in consult-buffer (and not down at the bottom)
+;;    (consult-org-roam-buffer-after-buffers t)
+;;    :config
+;;    ;; Eventually suppress previewing for certain functions
+;;    (consult-customize
+;;     consult-org-roam-forward-links
+;;     :preview-key "M-.")
+;;    :bind
+;;    ;; Define some convenient keybindings as an addition
+;;    ("C-c n e" . consult-org-roam-file-find)
+;;    ("C-c n b" . consult-org-roam-backlinks)
+;;    ("C-c n l" . consult-org-roam-forward-links)
+;;    ("C-c n r" . consult-org-roam-search))
+
 (defun open-kaartenbak ()
+  "Open the Kaartenbak in a new dedicated tab."
   (interactive)
-  (let ((tab-bar-index (tab-bar--tab-index-by-name "Kaartenbak")))
-    (if tab-bar-index
-        (tab-bar-switch-to-tab (+ tab-bar-index 1))
-      (progn
-        (tab-bar-new-tab)
-        (tab-bar-rename-tab "Kaartenbak")
-        (find-file "~/kaartenbak/20210727213932-kaartenbak.org")))))
+  (progn
+    (tab-bar-switch-to-tab "Kaartenbak")
+    ;; (find-file "~/kaartenbak/20210727213932-kaartenbak.org")
+    (org-roam-node-random)))
 
 (setq org-use-speed-commands t  ; set to true for navigation with shortcuts
       org-image-actual-width (list 550) ; resize the width of images
@@ -758,7 +828,7 @@
       org-adapt-indentation nil   ; Don't indent subsections (helps org-babel code blocks)
       org-cite-global-bibliography '("~/org/bib.bib")  ; for citing references
       org-latex-create-formula-image-program 'dvisvgm
-      org-latex-default-class "tufte-handout"
+      org-latex-default-class "article"
       org-highlight-latex-and-related '(native))
 
 (use-package org-download)
@@ -804,10 +874,14 @@
   (add-to-list 'org-latex-packages-alist '("" "minted"))
   (setq org-latex-listings 'minted)
 
-  (setq org-latex-pdf-process
-        '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-          "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+  ;; (setq org-latex-pdf-process
+  ;;       '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+  ;;         "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+  ;;         "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+
+  (setq org-latex-pdf-process 
+        '("xelatex -shell-escape -interaction nonstopmode %f"
+          "xelatex -shell-escape -interaction nonstopmode %f"))
 
   (add-to-list 'org-latex-classes
              '("tufte-handout"
@@ -832,7 +906,31 @@
   (org-cite-insert-processor 'citar)
   (org-cite-follow-processor 'citar)
   (org-cite-activate-processor 'citar)
-  (citar-bibliography '("~/org/bib.bib")))
+  (citar-bibliography '("~/org/bib.bib"))
+  (citar-notes-paths '("~/kaartenbak")))
+
+(setq citar-templates
+      '((main . "${author editor:30}     ${date year issued:4}     ${title:48}")
+        (suffix . "          ${=key= id:15}    ${=type=:12}    ${tags keywords keywords:*}")
+        (preview . "${author editor} (${year issued date}) ${title}, ${journal journaltitle publisher container-title collection-title}.")
+        (note . "${title}\n#+author: ${author editor}\n#+filetags: ${keywords tags}\n\n* Notes\n")))
+
+(use-package citar-org-roam
+  :after citar org-roam
+  :config
+  (citar-register-notes-source
+   'orb-citar-source (list :name "Org-Roam Notes"
+                           :category 'org-roam-node
+                           :items #'citar-org-roam--get-candidates
+                           :hasitems #'citar-org-roam-has-notes
+                           :open #'citar-org-roam-open-note
+                           :create #'orb-citar-edit-note
+                           :annotate #'citar-org-roam--annotate))
+
+  (setq citar-notes-source 'orb-citar-source)  
+  (citar-org-roam-mode))
+
+(setq citar-org-roam-note-title-template "${title}\n#+author: ${author editor}\n#+filetags: ${keywords tags}\n\n* Notes\n")
 
 (setq citar-symbols
       `((file ,(all-the-icons-faicon "file-o" :face 'all-the-icons-green :v-adjust -0.1) . " ")
@@ -865,9 +963,14 @@
     (kill-new link)
     (org-capture nil "r")))
 
+(defun trim-long-title (title)
+  (if (> (length title) fill-column)
+      (concat (substring title (- fill-column 4)) " ...")
+    title))
+
 (defun format-pdf-path-as-org-link (citekey)
   (let* ((entry (citar-get-entry citekey))
-         (title (citar-get-value "title" entry))
+         (title (citar-format--entry "${author editor:10}: ${title:30}" entry fill-column :ellipsis t))
          (file (citar-get-value "file" entry)))
     (format "[[%s][%s]]" file title)))
 
@@ -892,6 +995,23 @@
   (pdf-tools-install)
   (setq pdf-view-use-scaling t))
 
+;; (use-package org-noter)
+
+(add-to-list 'load-path (expand-file-name "notes-list" "~/.emacs.d/gitrepos"))
+(require 'notes-list)
+(setq notes-list-directories '("~/org"))
+(setq notes-list-files '("~/org/inbox.org" "~/org/chr.org" "~/org/prompts.org" "~/org/bookmarks.org" "~/org/leeslijst.org"
+                         "~/org/mt.org" "~/org/oc.org" "~/org/students.org" "~/org/personal.org" "~/org/reviews.org"
+                         "~/org/projects.org" "~/org/proposals.org"))
+
+(defun open-notes-list ()
+  "Open the notes-list in a new dedicated tab."
+  (interactive)
+  (progn
+    (tab-bar-switch-to-tab "Notes List")
+    ;; (find-file "~/kaartenbak/20210727213932-kaartenbak.org")
+    (notes-list)))
+
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
   :mode (("README\\.md\\'" . gfm-mode)
@@ -906,24 +1026,32 @@
 (use-package pandoc-mode
   :after org)
 
-(use-package lsp-mode
-  :init
-  (setq lsp-keymap-prefix "C-c l")
-  :hook ((python-mode . lsp)
-         ;; if you want which-key integration
-         (lsp-mode . lsp-enable-which-key-integration))
+(use-package treesit
+  :ensure nil
+  :hook ((python-mode . python-ts-mode))
   :config
-  (setq lsp-enable-symbol-highlighting nil
-        lsp-lens-enable nil
-        lsp-headerline-breadcrumb-enable nil
-        lsp-modeline-code-actions-enable nil
-        lsp-diagnostics-provider :none
-        lsp-modeline-diagnostics-enable nil
-        lsp-completion-show-detail nil
-        lsp-completion-show-kind nil
-        lsp-pyright-python-executable-cmd "python3"
-        )
-  :commands (lsp lsp-deferred))
+  (use-package combobulate
+    :hook ((python-ts-mode . combobulate-mode))
+    :load-path ("~/.emacs.d/gitrepos/combobulate")))
+
+;; (use-package lsp-mode
+;;   :init
+;;   (setq lsp-keymap-prefix "C-c l")
+;;   :hook ((python-mode . lsp)
+;;          ;; if you want which-key integration
+;;          (lsp-mode . lsp-enable-which-key-integration))
+;;   :config
+;;   (setq lsp-enable-symbol-highlighting nil
+;;         lsp-lens-enable nil
+;;         lsp-headerline-breadcrumb-enable nil
+;;         lsp-modeline-code-actions-enable nil
+;;         lsp-diagnostics-provider :none
+;;         lsp-modeline-diagnostics-enable nil
+;;         lsp-completion-show-detail nil
+;;         lsp-completion-show-kind nil
+;;         lsp-pyright-python-executable-cmd "python3"
+;;         )
+;;   :commands (lsp lsp-deferred))
 
 (use-package company
   :config
@@ -940,27 +1068,27 @@
   (define-key company-active-map (kbd "C-p") 'company-select-previous)
   ;; (add-to-list 'company-frontends 'company-tng-frontend)
   ;; :bind (("TAB" . 'company-indent-or-complete-common)))
-  :after lsp-mode
-  :hook (lsp-mode . company-mode)
-  :bind (:map company-active-map ("<tab>" . company-complete-selection))
-  (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common)))
+  ;; :after lsp-mode
+  ;; :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map ("<tab>" . company-complete-selection)))
+  ;; (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common)))
 
 (use-package company-prescient
   :config (company-prescient-mode))
 
-(use-package lsp-pyright
-  :ensure t
-  :hook (python-mode . (lambda ()
-                          (require 'lsp-pyright)
-                          (lsp))))  ; or lsp-deferred
+;; (use-package lsp-pyright
+;;   :ensure t
+;;   :hook (python-mode . (lambda ()
+;;                           (require 'lsp-pyright)
+;;                           (lsp))))  ; or lsp-deferred
 
 (use-package pyvenv
   :init (setenv "WORKON_HOME" "~/.virtualenvs/"))
 
 (use-package jupyter
   :after org
-  :defer t
   :config
+  (setenv "PYDEVD_DISABLE_FILE_VALIDATION" "1")
   (setq org-babel-python-command "python3")
   (setq org-confirm-babel-evaluate nil)
   (org-babel-do-load-languages 'org-babel-load-languages '((jupyter . t)))
@@ -1079,6 +1207,18 @@
     (define-key map (kbd "M-{") 'tab-bar-switch-to-prev-tab)
     map)
   "my-keys-minor-mode keymap.")
+
+(defun insert-meeting-heading-with-date ()
+  "Inserts a new Org heading titled 'Meeting' followed by the current date in day/month/year format at the cursor's position."
+  (interactive)
+  (let ((date-string (format-time-string "%d/%m/%Y")))
+    ;; Insert heading at the current level
+    (org-insert-heading)
+    ;; Insert custom heading title and date
+    (insert (format "Meeting %s" date-string))
+    ;; Properly reposition cursor and set up for content
+    (org-return)
+    (org-end-of-line)))
 
 (define-minor-mode my-keys-minor-mode
   "A minor mode so that my key settings override annoying major modes."
