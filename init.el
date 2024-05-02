@@ -60,8 +60,6 @@
 (scroll-bar-mode -1)
 (tooltip-mode -1)
 
-;; (fringe-mode 16)
-
 (blink-cursor-mode nil)
 (setq-default cursor-type 'hbar)
 
@@ -105,7 +103,7 @@
           (bg-tab-current bg-inactive)
           (bg-tab-other bg-dim)))
   (setq modus-themes-headings
-      '((t . (1.1))))
+        '((t . (1.1))))
   :config
   (load-theme 'modus-operandi :no-confirm))
 
@@ -169,6 +167,11 @@
 ;;                     :family "Roboto Mono" :weight 'regular)
 ;; (set-face-attribute 'italic nil
 ;;                     :family "Victor Mono" :weight 'semilight :slant 'italic)
+
+(set-fontset-font t 'unicode
+    (font-spec :name "Inconsolata Light" :size 16) nil)
+(set-fontset-font t '(#xe000 . #xffdd)
+    (font-spec :name "RobotoMono Nerd Font" :size 12) nil)
 
 (set-face-attribute 'variable-pitch nil :family "SF Pro" :height 1.0 :weight 'light)
 (setq-default fill-column 80)
@@ -268,6 +271,14 @@
 (show-paren-mode t)
 
 (pixel-scroll-precision-mode)
+
+;; (use-package ultra-scroll-mac
+;;   :if (eq window-system 'mac)
+;;   :load-path "~/.emacs.d/gitrepos/ultra-scroll-mac" ; if you git clone'd
+;;   :init
+;;   (setq scroll-conservatively 101) ; important for jumbo images
+;;   :config
+;;   (ultra-scroll-mac-mode 1))
 
 (add-hook 'text-mode-hook #'auto-fill-mode)
 
@@ -451,8 +462,8 @@
 (use-package org :ensure org-contrib)
 
 
-(defvar my-agenda-files '("inbox.org" "projects.org" "habits.org" "agenda.org" "leeslijst.org"
-                          "chr.org" "mt.org" "oc.org" "students.org" "personal.org" "reviews.org" "exchange.org"))
+(defvar my-agenda-files '("inbox.org" "projects.org" "habits.org" "agenda.org" "leeslijst.org" "computational-humanities-journal.org"
+                          "chr.org" "mt.org" "oc.org" "students.org" "personal.org" "reviews.org" "exchange.org" "lied-en-verhaal.org"))
 (setq org-directory "~/org"
       org-agenda-files (mapcar
                         (lambda (f) (concat (file-name-as-directory org-directory) f))
@@ -597,8 +608,18 @@
         (tags   timestamp-up priority-down category-keep)
         (search category-keep)))
 
+(add-to-list 'load-path (expand-file-name "svg-lib" "~/.emacs.d/gitrepos"))
 (require 'svg-lib)
+(add-to-list 'load-path (expand-file-name "svg-tag-mode" "~/.emacs.d/gitrepos"))
 (require 'svg-tag-mode)
+
+(add-to-list 'load-path (expand-file-name "org-margin" "~/.emacs.d/gitrepos"))
+(require 'org-margin)
+(setq org-margin-headers-set 'H-txt)
+
+(add-to-list 'load-path (expand-file-name "nano-agenda" "~/.emacs.d/gitrepos"))
+(require 'nano-agenda)
+(setq nano-agenda-view-mode 'day)
 
 (defun my/org-agenda-custom-date ()
   (interactive)
@@ -639,18 +660,18 @@
              '("x" "Tasks"
          ((tags "+meeting+TIMESTAMP>=\"<now>\""
                  ((org-agenda-span 90)
-                  (org-agenda-max-tags 15)
+                  (org-agenda-max-tags 10)
                   (org-agenda-skip-entry-if 'deadline)
                   (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
                   (org-agenda-overriding-header " Upcoming meetings\n")))
           (tags "DEADLINE>=\"<today>\""
                 ((org-agenda-span 90)
-                 (org-agenda-max-entries 15)
+                 (org-agenda-max-entries 10)
                  (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
                  (org-agenda-overriding-header " Upcoming deadlines\n")))
           (tags "DEADLINE<\"<today>\"+TODO=\"TODO\""
                 ((org-agenda-span 90)
-                 (org-agenda-max-entries 15)
+                 (org-agenda-max-entries 10)
                  (org-agenda-prefix-format '((tags . "%(my/org-agenda-custom-date) ")))
                  (org-agenda-overriding-header " Overdue deadlines\n"))))))
       
@@ -714,6 +735,7 @@
 
 (add-to-list 'load-path (expand-file-name "org-agenda-dashboard" "~/.emacs.d/gitrepos"))
 (require 'org-agenda-dashboard)
+(setq org-agenda-dashboard-sidebar-width 40)
 
 (defun side-by-side-agenda-view ()
   (progn
@@ -892,6 +914,10 @@
                ("\\paragraph{%s}" . "\\paragraph*{%s}")
                ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
+  ;; (add-to-list 'org-latex-classes
+  ;;            '("fancyhandout"
+  ;;              "\\documentclass{fancyhandout}"))
+
 (use-package bibtex
   :mode (("\\.bib\\'" . bibtex-mode)))
 
@@ -1002,7 +1028,8 @@
 (setq notes-list-directories '("~/org"))
 (setq notes-list-files '("~/org/inbox.org" "~/org/chr.org" "~/org/prompts.org" "~/org/bookmarks.org" "~/org/leeslijst.org"
                          "~/org/mt.org" "~/org/oc.org" "~/org/students.org" "~/org/personal.org" "~/org/reviews.org"
-                         "~/org/projects.org" "~/org/proposals.org"))
+                         "~/org/projects.org" "~/org/proposals.org" "~/org/computational-humanities-journal.org"
+                         "~/org/lied-en-verhaal.org"))
 
 (defun open-notes-list ()
   "Open the notes-list in a new dedicated tab."
@@ -1091,6 +1118,7 @@
   (setenv "PYDEVD_DISABLE_FILE_VALIDATION" "1")
   (setq org-babel-python-command "python3")
   (setq org-confirm-babel-evaluate nil)
+  (setq jupyter-executable "jupyter")
   (org-babel-do-load-languages 'org-babel-load-languages '((jupyter . t)))
   ;; default args for jupyter-python
   (setq org-babel-default-header-args:jupyter-python
